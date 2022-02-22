@@ -1,0 +1,62 @@
+{
+  "name": "desktop-owl",
+  "version": "1.0.2",
+  "main": "index.js",
+  "author": "esllo",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "e": "electron .",
+    "build:win": "electron-builder --win --x64",
+    "build:osx": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^17.0.1",
+    "electron-builder": "^22.14.13"
+  },
+  "build": {
+    "productName": "desktop-owl",
+    "appId": "esllo.desktop-owl",
+    "asar": false,
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "./res/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "default"
+      ],
+      "icon": "./res/icon.ico"
+    },
+    "dmg": {
+      "title": "desktop-owl",
+      "icon": "./res/icon.ico"
+    },
+    "portable": {
+      "artifactName": "desktop-owl.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "installerLanguages": [
+        "ko_KR"
+      ],
+      "language": "1042"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "doa"
+        ],
+        "name": "Desktop Owl Archive",
+        "role": "Viewer"
+      }
+    ],
+    "publish": null
+  },
+  "dependencies": {
+    "uuid": "^8.3.2"
+  }
+}
