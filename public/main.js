@@ -1,5 +1,9 @@
 const { ipcRenderer } = require('electron')
 const { uuid, widths, heights, xes, totalWidth } = require('./hash-parser')
+const fs = require('fs')
+const jszip = require('jszip')
+
+const FILES = ['climb-0.png', 'climb-1.png', 'fall-0.png', 'fall-1.png', 'sit-0.png', 'stand-0.png', 'tilt-0.png', 'tilt-1.png', 'walk-0.png', 'walk-1.png', 'walk-2.png', 'walk-3.png']
 
 const IMAGE_SIZE = 100
 const NEAR_WALL_THRESHOLD = 40
@@ -52,7 +56,9 @@ const instance = {
   },
   get height() {
     return heights[this.monitor]
-  }
+  },
+  images: {
+  },
 }
 
 let posX = 0, posY = 0
@@ -104,6 +110,17 @@ window.onmousemove = ({ screenX, screenY }) => {
     }
     if (posY > instance.bottom) {
       posY = instance.bottom
+    }
+  }
+}
+
+document.body.ondragover = (e) => e.preventDefault()
+document.body.ondrop = (e) => {
+  e.preventDefault()
+  if (e.dataTransfer.files[0]) {
+    const file = e.dataTransfer.files[0]
+    if (file.path.endsWith('.doa')) {
+      loadDoa(file.path)
     }
   }
 }
@@ -323,10 +340,36 @@ ipcRenderer.on('align', (e, data) => {
   setStand(120)
 })
 
-ipcRenderer.on('launch', (e, [data]) => {
-  if (data) {
-    // set resource
-    console.log(data)
+function loadOwl() {
+  FILES.forEach((file) => {
+    const buffer = fs.readFileSync(`${instance.appPath}/res/${file}`)
+    instance.images[file] = `data:image/png;base64, ${buffer.toString('base64')}`
+  })
+}
+
+function loadDoa(path) {
+  fs.readFile(path, (err, data) => {
+    jszip.loadAsync(data).then((zip) => {
+      const notExists = Object.keys(zip.files).some((filename) => !FILES.includes(filename))
+      if (notExists) {
+        loadOwl()
+      } else {
+        // load 
+        FILES.forEach(async (file) => {
+          const base64 = await zip.files[file].async('base64')
+          instance.images[file] = `data:image/png;base64, ${base64}`
+        })
+      }
+    })
+  })
+}
+
+ipcRenderer.on('launch', (e, [path], appPath) => {
+  instance.appPath = appPath
+  if (path && path !== '.') {
+    loadDoa(path)
+  } else {
+    loadOwl()
   }
   launch()
 })
@@ -375,7 +418,6 @@ function launch() {
         } else {
           instance.direction = instance.direction * -1
           velX = velX * -0.7
-          console.log('bump')
         }
       }
     }
@@ -384,7 +426,6 @@ function launch() {
       if (currentAction === 'walk') {
         clearBehavior()
       } else if (currentAction === 'fall') {
-        console.log('g')
         velX = velX * 0.9
         fallAcceleration = fallAcceleration * -0.3
       }
@@ -400,7 +441,6 @@ function launch() {
         } else {
           instance.direction = instance.direction * -1
           velX = velX * -0.7
-          console.log('bump')
         }
       }
     }
@@ -420,8 +460,8 @@ function launch() {
     if (currentSrc !== nextSrc || instance.requireSrcChange) {
       instance.requireSrcChange = false
       currentSrc = nextSrc
-      img.className = `${currentAction}-${instance.direction === 1 ? 'right' : 'left'}${instance.clicked ? ' clicked' : ''}`
-      img.src = `../res/${currentSrc}.png`
+      img.className = `${currentAction}-${instance.direction === 1 ? 'right' : 'left'}${instance.clicked ? ' clicked' : ''} `
+      img.src = instance.images[`${currentSrc}.png`]
     }
 
     sendMoveEvent()
