@@ -9,6 +9,13 @@ let maxCount = 10
 let sizeString
 let validDisplays
 
+const lock = app.requestSingleInstanceLock()
+if (!lock) {
+  dialog.showErrorBox('이미 Desktop Owl이 실행중이에요.', 'Desktop Owl은 동시에 실행할 수 없어요.\ndoa 파일을 끌어다 놓으면 캐릭터를 바꿀 수 있어요.')
+  app.quit()
+  return
+}
+
 function initWindow() {
   protocol.registerFileProtocol('*', (req, cb) => { });
   const allDisplays = screen.getAllDisplays()
@@ -182,7 +189,7 @@ function createWindow() {
   window.setAlwaysOnTop(true)
   window.webContents.on('did-finish-load', () => {
     window.show()
-    window.webContents.send('launch', process.argv.splice(1, 1))
+    window.webContents.send('launch', process.argv.splice(1, 1), app.getAppPath())
   })
   if (id === 1) {
     window.webContents.openDevTools({
