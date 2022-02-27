@@ -186,6 +186,9 @@ function createWindow() {
   })
   window.setFocusable(false)
   // window.setContentProtection(true)
+  window.setVisibleOnAllWorkspaces(true, {
+    visibleOnFullScreen: true
+  })
   window.setAlwaysOnTop(true)
   window.webContents.on('did-finish-load', () => {
     window.show()
