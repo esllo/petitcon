@@ -14,9 +14,13 @@ let server = null
 
 const lock = app.requestSingleInstanceLock()
 if (!lock) {
-  dialog.showErrorBox('이미 Desktop Owl이 실행중이에요.', 'Desktop Owl은 동시에 실행할 수 없어요.\ndoa 파일을 끌어다 놓으면 캐릭터를 바꿀 수 있어요.')
   app.quit()
   return
+} else {
+  app.on('second-instance', (e, argv) => {
+    const doa = argv.find((arg) => arg.endsWith('.doa'))
+    createWindow(doa)
+  })
 }
 
 function initWindow() {
@@ -186,7 +190,7 @@ function reduceWindow(forced = false) {
   }
 }
 
-function createWindow() {
+function createWindow(resource) {
   if (Object.keys(windows).length > maxCount) {
     return
   }
@@ -211,15 +215,13 @@ function createWindow() {
   })
   window.setFocusable(false)
   // window.setContentProtection(true)
-  window.setVisibleOnAllWorkspaces(true, {
-    visibleOnFullScreen: true
-  })
   window.setAlwaysOnTop(true)
   window.webContents.on('did-finish-load', () => {
     window.show()
-    window.webContents.send('launch', process.argv.splice(1, 1), app.getAppPath())
+    const targetResource = resource || process.argv.splice(1, 1)[0]
+    window.webContents.send('launch', targetResource, app.getAppPath())
   })
-  if (id === 1) {
+  if (process.env.NODE_ENV === 'development') {
     window.webContents.openDevTools({
       mode: 'detach'
     })
