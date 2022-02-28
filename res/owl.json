@@ -1,0 +1,89 @@
+{
+  "name": "owl",
+  "author": "esllo",
+  "behaviors": [
+    {
+      "action": "fall",
+      "condition": "isNotGround",
+      "duration": [15, 30],
+      "durationRange": {
+        "fixed": 10000
+      },
+      "evaluate": [
+        {
+          "variable": "falling",
+          "value": true
+        }
+      ]
+    }, 
+    {
+      "action": "climb",
+      "condition": "hasNeerWall",
+      "chance": 60,
+      "duration": [20, 40],
+      "durationRange": {
+        "min": 6,
+        "max": 12,
+        "multiply": 40
+      },
+      "evaluate": [
+        {
+          "func": "dockToNeerWall"
+        },
+        {
+          "variable": "velY",
+          "value": -0.7
+        }
+      ]
+    }, 
+    {
+      "action": "walk",
+      "chance": 40 ,
+      "duration": [20, 40, 60, 80],
+      "durationRange": {
+        "min": 2,
+        "max": 12,
+        "multiply": 40
+      },
+      "evaluate": [
+        {
+          "func": "setRandomDirection"
+        },
+        {
+          "variable": "velX",
+          "key": "direction"
+        }
+      ]
+    },
+    {
+      "action": "tilt",
+      "chance": 30 ,
+      "duration": [15, 30],
+      "durationRange": {
+        "min": 6,
+        "max": 8,
+        "multiply": 20
+      }
+    },
+    {
+      "action": "sit",
+      "chance": 30 ,
+      "duration": [],
+      "durationRange": {
+        "min": 6,
+        "max": 8,
+        "multiply": 20
+      }
+    },
+    {
+      "action": "stand",
+      "chance": 100,
+      "duration": [],
+      "durationRange": {
+        "min": 2,
+        "max": 5,
+        "multiply": 30
+      }
+    }
+  ]
+}
