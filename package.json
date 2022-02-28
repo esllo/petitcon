@@ -1,12 +1,12 @@
 {
   "name": "desktop-owl",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "index.js",
   "author": "esllo",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "e": "electron .",
+    "e": "NODE_ENV=development electron .",
     "build:win": "electron-builder --win --x64",
     "build:osx": "electron-builder --mac"
   },
@@ -40,6 +40,7 @@
     "nsis": {
       "oneClick": true,
       "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": false,
       "installerLanguages": [
         "ko_KR"
       ],
