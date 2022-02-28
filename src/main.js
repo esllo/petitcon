@@ -3,6 +3,7 @@ const { uuid, widths, heights, xes, totalWidth } = require('./hash-parser')
 const fs = require('fs')
 const jszip = require('jszip')
 const owl = require('../src/owl')
+const owlJson = require('../res/owl.json')
 
 
 const THROW_DENOM = 30
@@ -10,7 +11,7 @@ const FILES = ['climb-0.png', 'climb-1.png', 'fall-0.png', 'fall-1.png', 'sit-0.
 
 const img = document.getElementById('img')
 
-const { instance, clearBehavior, setFall, setRandomPosition, getRangeRand, setStand, launch } = owl(img, widths, heights, xes, totalWidth)
+const { instance, clearBehavior, setBehavior, setRandomPosition, getRangeRand, launch, parseData } = owl(img, widths, heights, xes, totalWidth, owlJson)
 instance.tickHandler = sendMoveEvent
 
 window.onmousedown = () => {
@@ -37,7 +38,7 @@ window.onmouseup = () => {
     instance.fallAcceleration = (instance.posY - prevY) / THROW_DENOM
     instance.velX = (instance.posX - prevX) / THROW_DENOM
     instance.direction = instance.posX - prevX < 0 ? 1 : -1
-    setFall()
+    setBehavior('fall')
   }
 }
 
@@ -85,7 +86,7 @@ function throwAll(dist) {
   delY += delY
   instance.velX = delX
   instance.direction = delX < 0 ? 1 : -1
-  setFall()
+  setBehavior('fall')()
 }
 
 ipcRenderer.on('throw', () => {
@@ -99,7 +100,7 @@ ipcRenderer.on('throwFall', () => {
 ipcRenderer.on('moveMonitor', (e, data) => {
   instance.monitor = Number(data)
   setRandomPosition()
-  setFall()
+  setBehavior('fall')()
 })
 
 ipcRenderer.on('align', (e, data) => {
@@ -111,7 +112,7 @@ ipcRenderer.on('align', (e, data) => {
     instance.posY = instance.bottom
   }
   clearBehavior()
-  setStand(120)
+  setBehavior('stand')
 })
 
 function loadOwl() {
@@ -123,16 +124,40 @@ function loadOwl() {
 
 function loadDoa(path) {
   fs.readFile(path, (err, data) => {
-    jszip.loadAsync(data).then((zip) => {
-      const notExists = Object.keys(zip.files).some((filename) => !FILES.includes(filename))
-      if (notExists) {
+    jszip.loadAsync(data).then(async (zip) => {
+      let json = owlJson
+      if (zip.files['behaviors.json']) {
+        const jsonText = await zip.files['behaviors.json'].async('text')
+        try {
+          const jsonData = JSON.parse(jsonText)
+          json = jsonData
+        } catch (e) {
+          console.error(e)
+        }
+      }
+      const requiredFiles = json.behaviors.reduce((prev, { action, duration }) => {
+        let files = duration.map((_, i) => `${action}-${i}.png`)
+        if (files.length === 0) {
+          files = [`${action}-0.png`]
+        }
+        return [...prev, ...files]
+      }, [])
+      const zipFiles = Object.keys(zip.files).filter((file) => file.endsWith('.png'))
+      const zipCheck = zipFiles.find((file) => !requiredFiles.includes(file))
+      const listCheck = requiredFiles.find((file) => !zipFiles.includes(file))
+      console.log(zipFiles, requiredFiles)
+      if (zipCheck || listCheck) {
         loadOwl()
+        ipcRenderer.send('dialog', {
+          message: '유효하지 않은 doa 파일이에요'
+        })
       } else {
         // load 
-        FILES.forEach(async (file) => {
+        requiredFiles.forEach(async (file) => {
           const base64 = await zip.files[file].async('base64')
           instance.images[file] = `data:image/png;base64, ${base64}`
         })
+        parseData(json)
       }
     })
   })
