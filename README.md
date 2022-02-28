@@ -34,3 +34,97 @@
 ###### 각 이미지는 100x100 투명도가 있는 png입니다.
 
 doa 파일을 실행하거나 실행중인 desktop-owl 프로그램에 doa 파일을 드래그&드롭 하여 적용할 수 있습니다.
+
+## 커스텀 행동 만들기
+
+아래와 같은 형태로 커스텀 행동을 만들 수 있습니다. 
+
+```js
+{
+  "name": "mokoko",
+  "author": "esllo",
+  "behaviors": [
+    {
+      "action": "fall",
+      "condition": "isNotGround",
+      "duration": [15, 30],
+      "durationRange": {
+        "fixed": 10000
+      },
+      "evaluate": [
+        {
+          "variable": "falling",
+          "value": true
+        }
+      ]
+    }, 
+    {
+      "action": "climb",
+      "condition": "hasNeerWall",
+      "chance": 60,
+      "duration": [20, 40],
+      "durationRange": {
+        "min": 6,
+        "max": 12,
+        "multiply": 40
+      },
+      "evaluate": [
+        {
+          "func": "dockToNeerWall"
+        },
+        {
+          "variable": "velY",
+          "value": -0.7
+        }
+      ]
+    }, 
+    {
+      "action": "walk",
+      "chance": 40 ,
+      "duration": [20, 40, 60, 80],
+      "durationRange": {
+        "min": 2,
+        "max": 12,
+        "multiply": 40
+      },
+      "evaluate": [
+        {
+          "func": "setRandomDirection"
+        },
+        {
+          "variable": "velX",
+          "key": "direction"
+        }
+      ]
+    },
+    {
+      "action": "sneeze",
+      "chance": 30 ,
+      "duration": [60, 90, 120],
+      "durationRange": {
+        "fixed": 120
+      }
+    },
+    {
+      "action": "sit",
+      "chance": 30 ,
+      "duration": [],
+      "durationRange": {
+        "min": 3,
+        "max": 4,
+        "multiply": 20
+      }
+    },
+    {
+      "action": "stand",
+      "chance": 100,
+      "duration": [],
+      "durationRange": {
+        "min": 2,
+        "max": 5,
+        "multiply": 30
+      }
+    }
+  ]
+}
+```
