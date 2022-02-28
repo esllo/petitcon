@@ -1,13 +1,16 @@
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, dialog, protocol } = require('electron')
 const path = require('path')
+const { startServer } = require('./src/server')
 
 let windows = {}
 let tray = null
 let ignoreClick = false
 let id = 0
+let windowCount = 0;
 let maxCount = 10
 let sizeString
 let validDisplays
+let server = null
 
 const lock = app.requestSingleInstanceLock()
 if (!lock) {
@@ -36,6 +39,26 @@ function initWindow() {
       label: 'Desktop Owl - ESLLO',
       type: 'normal',
       enabled: false,
+    },
+    {
+      type: 'separator'
+    },
+    {
+      type: 'checkbox',
+      label: '스트리머용 서버 실행',
+      click: () => {
+        if (!server) {
+          server = startServer(app.getAppPath())
+          new Array(windowCount).fill(0).forEach(() => reduceWindow(true))
+        } else {
+          server.close()
+          server = null
+          if (windowCount < 1) {
+            createWindow()
+          }
+        }
+      },
+      checked: !!server
     },
     {
       type: 'separator'
@@ -147,14 +170,15 @@ function initWindow() {
   tray.setContextMenu(contextMenu)
 }
 
-function reduceWindow() {
-  if (Object.keys(windows).length > 1) {
+function reduceWindow(forced = false) {
+  if (Object.keys(windows).length > 1 || forced) {
     const key = Object.keys(windows)[0]
     windows[key].webContents.send('stop')
     windows[key].close()
     windows[key] = null
 
     delete windows[key]
+    windowCount -= 1
   } else {
     dialog.showMessageBox({
       message: '최소 한 마리는 돌아다녀야 해요'
@@ -166,6 +190,7 @@ function createWindow() {
   if (Object.keys(windows).length > maxCount) {
     return
   }
+  windowCount += 1
   const uuid = `id-${id++}`
   const window = new BrowserWindow({
     width: 100,
@@ -202,7 +227,7 @@ function createWindow() {
 
   windows[uuid] = window
 
-  window.loadFile('./public/index.html', { hash: uuid + sizeString })
+  window.loadFile('./src/index.html', { hash: uuid + sizeString })
 }
 
 ipcMain.on('move', (e, data) => {
@@ -255,4 +280,8 @@ app.on('will-finish-launching', () => {
   })
 })
 app.whenReady().then(initWindow)
-app.on('window-all-closed', app.quit)
+app.on('window-all-closed', () => {
+  if (!server) {
+    app.quit()
+  }
+})

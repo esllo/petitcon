@@ -57,6 +57,7 @@
     "publish": null
   },
   "dependencies": {
+    "express": "^4.17.3",
     "jszip": "^3.7.1",
     "uuid": "^8.3.2"
   }
