@@ -243,6 +243,10 @@ ipcMain.on('move', (e, data) => {
   }
 })
 
+ipcMain.on('dialog', (e, data) => {
+  dialog.showMessageBox(data)
+})
+
 function mapWindows(func) {
   Object.values(windows).map(func)
 }
