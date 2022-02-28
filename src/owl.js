@@ -1,4 +1,4 @@
-function owl(img, widths, heights, xes, totalWidth) {
+function owl(img, widths, heights, xes, totalWidth, behaviorData) {
   const NEAR_WALL_THRESHOLD = 40
   const LEFT_WALL = -1, RIGHT_WALL = 1
 
@@ -14,11 +14,11 @@ function owl(img, widths, heights, xes, totalWidth) {
     velY: 0,
     tick: 0,
     behaviorTick: 0,
-    behaviorDuration: 0,
+    behaviorDuration: -1,
     fallAcceleration: 0,
     currentSrc: '',
-    nextSrc: 'stand-0',
-    currentAction: 'stand',
+    nextSrc: '',
+    currentAction: '',
     queue: [],
     _direction: getRangeRand(0, 1) === 0 ? 1 : -1,
     get direction() {
@@ -61,8 +61,10 @@ function owl(img, widths, heights, xes, totalWidth) {
     get src() {
       return this.images[`${this.currentSrc}.png`]
     },
-    images: {
-    },
+    images: {},
+    actions: {},
+    behaviors: {},
+    conditions: [],
     tickHandler: () => { }
   }
 
@@ -93,71 +95,45 @@ function owl(img, widths, heights, xes, totalWidth) {
     return getNeerWall() !== 0
   }
 
+  function isNotGround() {
+    return instance.posY < instance.bottom
+  }
+
   function getNextBehavior() {
-    if (instance.posY < instance.bottom) {
-      setFall()
-    } else if (hasNeerWall() && hasChance(60)) {
-      // climb wall
-      setClimb()
-    } else if (hasChance(40)) {
-      // walk
-      setWalk()
-    } else if (hasChance(30)) {
-      // tilt
-      setTilt()
-    } else if (hasChance(30)) {
-      // sit
-      setSit()
-    } else {
-      // stand
-      setStand()
+    const { conditions } = instance
+    for (let i = 0; i < conditions.length; i++) {
+      const { condition, chance, action } = conditions[i]
+      let realCondition = callFunction(condition)
+      if (realCondition === undefined) {
+        realCondition = true
+      }
+      const realChance = hasChance(chance || 100)
+      if (realCondition && realChance) {
+        setBehavior(action)
+        return
+      }
     }
   }
 
-  function setFall() {
-    instance.currentAction = 'fall'
-    instance.behaviorDuration = 10000
-    instance.falling = true
+  function setRandomDirection() {
+    if (hasChance(50)) {
+      instance.direction = -1;
+    } else {
+      instance.direction = 1;
+    }
   }
 
-  function setClimb() {
+  function dockToNeerWall() {
     instance.direction = getNeerWall();
     if (instance.direction === LEFT_WALL) {
       instance.posX = instance.left
     } else if (instance.direction === RIGHT_WALL) {
       instance.posX = instance.right
     }
-    instance.currentAction = 'climb'
-    instance.behaviorDuration = getRangeRand(6, 12) * 40
-    instance.velY = -0.7
   }
 
-  function setWalk() {
-    if (hasChance(50)) {
-      // walk dir -1
-      instance.direction = -1;
-    } else {
-      // walk dir 1
-      instance.direction = 1;
-    }
-    instance.velX = instance.direction;
-    instance.currentAction = 'walk'
-    instance.behaviorDuration = getRangeRand(2, 12) * 40
-  }
-
-  function setStand(ticks) {
-    instance.currentAction = 'stand'
-    instance.behaviorDuration = instance.ticks ? ticks : getRangeRand(2, 5) * 30
-  }
-
-  function setTilt() {
-    instance.currentAction = 'tilt'
-    instance.behaviorDuration = getRangeRand(6, 9) * 20
-  }
-
-  function setSit() {
-    instance.currentAction = 'sit'
-    instance.behaviorDuration = getRangeRand(6, 9) * 20
+  function setBehavior(action) {
+    instance.behaviors[action]()
   }
 
 
@@ -171,62 +147,80 @@ function owl(img, widths, heights, xes, totalWidth) {
     instance.fallAcceleration = 0
   }
 
-  const actions = {
-    climb: function () {
-      if (instance.tick < 20) {
-        instance.nextSrc = 'climb-0'
-      } else if (instance.tick < 40) {
-        instance.nextSrc = 'climb-1'
-      } else {
-        instance.tick = 0
-      }
-    },
-    walk: function () {
-      if (instance.tick < 20) {
-        instance.nextSrc = 'walk-0'
-      } else if (instance.tick < 40) {
-        instance.nextSrc = 'walk-1'
-      } else if (instance.tick < 60) {
-        instance.nextSrc = 'walk-2'
-      } else if (instance.tick < 80) {
-        instance.nextSrc = 'walk-3'
-      } else {
-        instance.tick = 0
-      }
-    },
-    fall: function () {
-      if (instance.tick < 15) {
-        instance.nextSrc = 'fall-0'
-      } else if (instance.tick < 30) {
-        instance.nextSrc = 'fall-1'
-      } else {
-        instance.tick = 0
-      }
-    },
-    stand: function () {
-      instance.nextSrc = 'stand-0'
-    },
-    tilt: function () {
-      if (instance.tick < 15) {
-        instance.nextSrc = 'tilt-0'
-      } else if (instance.tick < 30) {
-        instance.nextSrc = 'tilt-1'
-      } else {
-        instance.tick = 0;
-      }
-    },
-    sit: function () {
-      if (instance.tick < 3) {
-        instance.nextSrc = 'stand-0'
-      } else if (instance.tick < instance.behaviorDuration - 3) {
-        instance.nextSrc = 'sit-0'
-      } else if (instance.tick < instance.behaviorDuration) {
-        instance.nextSrc = 'stand-0'
-      } else {
-        instance.tick = 0;
-      }
+  function callFunction(name) {
+    switch (name) {
+      case 'dockToNeerWall':
+        dockToNeerWall()
+        break
+      case 'setRandomDirection':
+        setRandomDirection()
+        break
+      case 'hasNeerWall':
+        return hasNeerWall()
+      case 'isNotGround':
+        return isNotGround()
+      default:
+        return undefined
     }
   }
+
+  function parseData(data) {
+    let parseTarget = behaviorData
+    if (data) {
+      parseTarget = data
+    }
+    const { name, author, behaviors } = parseTarget
+    instance.actions = {}
+    instance.behaviors = {}
+    instance.conditions = []
+    behaviors.forEach(behavior => {
+      const { action, condition, duration, durationRange, evaluate, chance } = behavior;
+      instance.actions[action] = function () {
+        if (duration && duration.length > 0) {
+          // instance duration check
+          for (let i = 0; i < duration.length; i++) {
+            if (instance.tick < duration[i]) {
+              instance.nextSrc = `${action}-${i}`
+              return
+            }
+          }
+          // instance tick reset
+          instance.tick = 0
+        } else {
+          instance.nextSrc = `${action}-0`
+        }
+      }
+      instance.behaviors[action] = function () {
+        if (evaluate && Array.isArray(evaluate)) {
+          evaluate.forEach(({ func, variable, value, key }) => {
+            if (func) {
+              callFunction(func)
+            } else if (variable && (value || key)) {
+              instance[variable] = value || instance[key]
+            }
+          })
+        }
+        instance.currentAction = action
+        const { fixed, min, max, multiply } = durationRange
+        if (fixed) {
+          instance.behaviorDuration = fixed
+        } else if (min > -1 && max > -1) {
+          const duration = getRangeRand(min, max) * (multiply || 1)
+          instance.behaviorDuration = duration
+        } else {
+          // similar to 1 sec
+          instance.behaviorDuration = 60
+        }
+      }
+      instance.conditions.push({
+        condition,
+        chance,
+        action
+      })
+    })
+  }
+
+  parseData()
 
   function tick() {
     if (instance.stopped) {
@@ -237,7 +231,7 @@ function owl(img, widths, heights, xes, totalWidth) {
       if (instance.currentAction === 'climb') {
         instance.velX = instance.direction * -1;
         instance.velY = 0
-        setFall()
+        setBehavior('fall')
       } else {
         clearBehavior()
         getNextBehavior()
@@ -245,8 +239,8 @@ function owl(img, widths, heights, xes, totalWidth) {
     } else {
       instance.tick++
       instance.behaviorTick++;
-      if (actions[instance.currentAction]) {
-        actions[instance.currentAction]()
+      if (instance.actions[instance.currentAction]) {
+        instance.actions[instance.currentAction]()
       } else {
         clearBehavior()
       }
@@ -265,7 +259,7 @@ function owl(img, widths, heights, xes, totalWidth) {
       } else if (instance.currentAction === 'fall') {
         if (hasChance(10)) {
           clearBehavior()
-          setClimb()
+          setBehavior('climb')
         } else {
           instance.direction = instance.direction * -1
           instance.velX = instance.velX * -0.7
@@ -288,7 +282,7 @@ function owl(img, widths, heights, xes, totalWidth) {
       } else if (instance.currentAction === 'fall') {
         if (hasChance(10)) {
           clearBehavior()
-          setClimb()
+          setBehavior('climb')
         } else {
           instance.direction = instance.direction * -1
           instance.velX = instance.velX * -0.7
@@ -299,7 +293,7 @@ function owl(img, widths, heights, xes, totalWidth) {
       instance.posY = instance.bottom;
       if (instance.currentAction === 'walk' || instance.currentAction === 'fall') {
         clearBehavior()
-        setSit()
+        setBehavior('sit')
       }
     }
 
@@ -332,17 +326,13 @@ function owl(img, widths, heights, xes, totalWidth) {
     clearBehavior,
     launch,
     instance,
-    setClimb,
-    setFall,
+    setBehavior,
     setRandomPosition,
-    setSit,
-    setStand,
-    setTilt,
-    setWalk,
     getNeerWall,
     getNextBehavior,
     getRangeRand,
     tick,
+    parseData,
   }
 }
 if (typeof module !== 'undefined') {
