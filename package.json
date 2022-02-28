@@ -1,6 +1,6 @@
 {
   "name": "desktop-owl",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "index.js",
   "author": "esllo",
   "license": "MIT",
@@ -59,7 +59,6 @@
   },
   "dependencies": {
     "express": "^4.17.3",
-    "jszip": "^3.7.1",
-    "uuid": "^8.3.2"
+    "jszip": "^3.7.1"
   }
 }
