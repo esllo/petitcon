@@ -138,7 +138,7 @@ function loadDoa(path) {
   })
 }
 
-ipcRenderer.on('launch', (e, [path], appPath) => {
+ipcRenderer.on('launch', (e, path, appPath) => {
   instance.appPath = appPath
   if (path && path !== '.') {
     loadDoa(path)
