@@ -181,18 +181,23 @@ function initWindow() {
 
 function reduceWindow(forced = false) {
   if (Object.keys(windows).length > 1 || forced) {
-    const key = Object.keys(windows)[0]
-    windows[key].webContents.send('stop')
-    windows[key].close()
-    windows[key] = null
-
-    delete windows[key]
-    windowCount -= 1
+    const uuid = Object.keys(windows)[0]
+    removeWindow(uuid)
   } else {
     dialog.showMessageBox({
       message: '최소 한 마리는 돌아다녀야 해요'
     })
   }
+}
+
+function removeWindow(uuid) {
+  windows[uuid].webContents.send('stop')
+  windows[uuid].close()
+  windows[uuid] = null
+  delete windows[uuid]
+
+  windowCount -= 1
+
 }
 
 function createWindow(resource) {
@@ -248,6 +253,29 @@ ipcMain.on('move', (e, data) => {
   }
 })
 
+function buildMenu({ uuid, name }) {
+  const menu = Menu.buildFromTemplate([
+    {
+      label: `PetitCon - ${name}`,
+      type: 'normal',
+      enabled: false,
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '집 보내기',
+      click: bindRemoveWindow(uuid)
+    }
+  ])
+  return menu
+}
+
+ipcMain.on('showMenu', (e, data) => {
+  const contextMenu = buildMenu(data)
+  contextMenu.popup()
+})
+
 ipcMain.on('dialog', (e, data) => {
   dialog.showMessageBox(data)
 })
@@ -266,6 +294,10 @@ function bindSendAll(...args) {
 
 function bindWebPreference(key) {
   return ({ checked }) => mapWindows((window) => window[key](checked))
+}
+
+function bindRemoveWindow(uuid) {
+  return () => removeWindow(uuid)
 }
 
 app.whenReady().then(initWindow)
