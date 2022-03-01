@@ -11,6 +11,7 @@ let sizeString
 let validDisplays
 let server = null
 
+
 const lock = app.requestSingleInstanceLock()
 if (!lock) {
   app.quit()
@@ -33,6 +34,7 @@ function initWindow() {
     const { width, height, x } = curr.workArea
     return prev + `&${width}-${height}-${x}`
   }, '')
+
 
   createWindow()
 
@@ -107,20 +109,20 @@ function initWindow() {
       submenu: [
         {
           label: '날리기',
-          click: throwAll
+          click: bindSendAll('throw')
         },
         {
           label: '멀리 날리기',
-          click: throwFallAll
+          click: bindSendAll('throwFall')
         },
         ...(validDisplays.length > 1 ? [
           {
             label: '주 모니터로 옮기기',
-            click: () => moveToMonitor(0)
+            click: bindSendAll('moveMonitor', 0)
           },
           {
             label: '보조 모니터로 옮기기',
-            click: () => moveToMonitor(1)
+            click: bindSendAll('moveMonitor', 1)
           }
         ] : []),
         {
@@ -128,11 +130,11 @@ function initWindow() {
           submenu: [
             {
               label: '왼쪽으로 정렬',
-              click: () => changeAlign('left')
+              click: bindSendAll('align', 'left')
             },
             {
               label: '오른쪽으로 정렬',
-              click: () => changeAlign('right')
+              click: bindSendAll('align', 'right')
             }
           ]
         }
@@ -144,12 +146,12 @@ function initWindow() {
     {
       label: '클릭 무시하기',
       type: 'checkbox',
-      click: changeIgnoreClick
+      click: bindWebPreference('setIgnoreMouseEvents')
     },
     {
       label: '컨텐츠 보호 걸기',
       type: 'checkbox',
-      click: changeContentProtectionClick
+      click: bindWebPreference('setContentProtection')
     },
     {
       label: '맨 앞으로 보내기',
@@ -220,6 +222,9 @@ function createWindow(resource) {
   window.setAlwaysOnTop(true)
   window.webContents.on('did-finish-load', () => {
     window.show()
+
+    windows[uuid] = window
+
     const targetResource = resource || process.argv.splice(1, 1)[0]
     window.webContents.send('launch', targetResource, app.getAppPath())
   })
@@ -228,8 +233,6 @@ function createWindow(resource) {
       mode: 'detach'
     })
   }
-
-  windows[uuid] = window
 
   window.loadFile('./src/index.html', { hash: uuid + sizeString })
 }
@@ -257,43 +260,14 @@ function sendAll(...args) {
   mapWindows((window) => window.webContents.send(...args))
 }
 
-function throwAll() {
-  sendAll('throw')
-}
-function throwFallAll() {
-  sendAll('throwFall')
+function bindSendAll(...args) {
+  return () => sendAll(...args)
 }
 
-function moveToMonitor(monitor) {
-  sendAll('moveMonitor', monitor)
+function bindWebPreference(key) {
+  return ({ checked }) => mapWindows((window) => window[key](checked))
 }
 
-function changeAlign(align) {
-  sendAll('align', align)
-}
-
-function changeIgnoreClick(e) {
-  const { checked } = e
-  if (checked) {
-    mapWindows((window) => window.setIgnoreMouseEvents(true))
-  } else {
-    mapWindows((window) => window.setIgnoreMouseEvents(false))
-  }
-}
-function changeContentProtectionClick(e) {
-  const { checked } = e
-  if (checked) {
-    mapWindows((window) => window.setContentProtection(true))
-  } else {
-    mapWindows((window) => window.setContentProtection(false))
-  }
-}
-
-app.on('will-finish-launching', () => {
-  app.on('open-file', (e, file) => {
-
-  })
-})
 app.whenReady().then(initWindow)
 app.on('window-all-closed', () => {
   if (!server) {
