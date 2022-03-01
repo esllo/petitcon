@@ -65,9 +65,12 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     actions: {},
     behaviors: {},
     conditions: [],
-    tickHandler: () => { }
+    tickHandler: () => { },
+    get currentTime() {
+      return new Date().getTime()
+    },
+    lastTimeStamp: this.currentTime
   }
-
 
   function setRandomPosition() {
     instance.posX = getRangeRand(instance.left, instance.right)
@@ -316,12 +319,26 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (instance.tickHandler) {
       instance.tickHandler()
     }
-    instance.handler = setTimeout(tick, 20)
+    postTick()
+  }
+
+  function postTick() {
+    const time = instance.currentTime
+    const delta = time - instance.lastTimeStamp
+    let reduce = 0
+    if (delta > 16) {
+      reduce = delta - 16
+      if (reduce > 16) {
+        reduce = 16
+      }
+    }
+    instance.handler = setTimeout(tick, 16 - reduce)
+    instance.lastTimeStamp = time
   }
 
   function launch() {
     setRandomPosition()
-    instance.handler = setTimeout(tick, 20)
+    postTick()
   }
 
   return {
