@@ -10,6 +10,8 @@ let maxCount = 10
 let sizeString
 let validDisplays
 let server = null
+// 'screen-saver'
+const ALWAYS_ON_TOP_LEVEL = 'pop-up-menu'
 
 
 const lock = app.requestSingleInstanceLock()
@@ -159,7 +161,7 @@ function initWindow() {
       click: () => {
         mapWindows((window) => {
           window.setAlwaysOnTop(false)
-          window.setAlwaysOnTop(true)
+          window.setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
         })
       }
     },
@@ -220,11 +222,10 @@ function createWindow(resource) {
     },
     show: false,
     transparent: true,
-    alwaysOnTop: true,
   })
   window.setFocusable(false)
   // window.setContentProtection(true)
-  window.setAlwaysOnTop(true)
+  window.setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
   window.webContents.on('did-finish-load', () => {
     window.show()
 
@@ -327,6 +328,13 @@ function bindRemoveWindow(uuid) {
 function bindResizeWindow(uuid, size) {
   return () => windows[uuid].webContents.send('resize', size)
 }
+
+ipcMain.on('requestFocus', (e, uuid) => {
+  if (windows[uuid]) {
+    windows[uuid].setAlwaysOnTop(false)
+    windows[uuid].setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
+  }
+})
 
 app.whenReady().then(initWindow)
 app.on('window-all-closed', () => {
