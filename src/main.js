@@ -7,9 +7,7 @@ const ptcJson = require('../res/ptc.json')
 const path = require('path')
 const { ipcSend, bind, handleIpc } = require('./ipc')
 const { handleEvent } = require('./eventHandler')
-
-const FILES = ['climb-0.png', 'climb-1.png', 'fall-0.png', 'fall-1.png', 'sit-0.png', 'stand-0.png', 'tilt-0.png', 'tilt-1.png', 'walk-0.png', 'walk-1.png', 'walk-2.png', 'walk-3.png']
-
+const { BASE64_META, OWL_FILES, NUMBER, CUSTOM_FILE_EXTENSION, BEHAVIOR_JSON, FILE_NOT_VALID, IPC_DIALOG, IPC_LAUNCH, CURRENT_DIRECTORY, IPC_RESIZE } = require('./constants')
 const img = document.getElementById('img')
 
 const myPet = pet(img, widths, heights, xes, totalWidth, owlJson)
@@ -17,33 +15,33 @@ const { instance, launch, parseData } = myPet
 
 function checkResize({ size }) {
   if (size) {
-    if (typeof size === 'number') {
-      ipcSend('resize', { uuid, width: size, height: size })
-    } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+    if (typeof size === NUMBER) {
+      ipcSend(IPC_RESIZE, { uuid, width: size, height: size })
+    } else if (typeof size.width === NUMBER && typeof size.height === NUMBER) {
       const { width, height } = size
-      ipcSend('resize', { uuid, width, height })
+      ipcSend(IPC_RESIZE, { uuid, width, height })
     }
   }
 }
 
 function loadOwl() {
-  FILES.forEach((file) => {
+  OWL_FILES.forEach((file) => {
     const buffer = fs.readFileSync(`${instance.appPath}/res/${file}`)
-    instance.images[file] = `data:image/png;base64, ${buffer.toString('base64')}`
+    instance.images[file] = `${BASE64_META}${buffer.toString('base64')}`
   })
   checkResize(owlJson)
 }
 
 function loadPtc(filepath) {
   let filename = path.basename(filepath)
-  if (filename.endsWith('.ptc')) {
-    filename = filename.substring(0, filename.length - 4)
+  if (filename.endsWith(CUSTOM_FILE_EXTENSION)) {
+    filename = filename.substring(0, filename.length - CUSTOM_FILE_EXTENSION.length)
   }
   fs.readFile(filepath, (err, data) => {
     jszip.loadAsync(data).then(async (zip) => {
       let json = ptcJson
-      if (zip.files['behaviors.json']) {
-        const jsonText = await zip.files['behaviors.json'].async('text')
+      if (zip.files[BEHAVIOR_JSON]) {
+        const jsonText = await zip.files[BEHAVIOR_JSON].async('text')
         try {
           const jsonData = JSON.parse(jsonText)
           json = jsonData
@@ -66,14 +64,14 @@ function loadPtc(filepath) {
       const listCheck = requiredFiles.find((file) => !zipFiles.includes(file))
       if (zipCheck || listCheck) {
         loadOwl()
-        ipcSend('dialog', {
-          message: '유효하지 않은 doa 파일이에요'
+        ipcSend(IPC_DIALOG, {
+          message: FILE_NOT_VALID
         })
       } else {
         // load 
         requiredFiles.forEach(async (file) => {
           const base64 = await zip.files[file].async('base64')
-          instance.images[file] = `data:image/png;base64, ${base64}`
+          instance.images[file] = `${BASE64_META}${base64}`
         })
         checkResize(json)
         parseData(json)
@@ -85,9 +83,9 @@ function loadPtc(filepath) {
 handleIpc(myPet)
 handleEvent(myPet, loadPtc)
 
-bind('launch', (e, path, appPath) => {
+bind(IPC_LAUNCH, (e, path, appPath) => {
   instance.appPath = appPath
-  if (path && path !== '.') {
+  if (path && path !== CURRENT_DIRECTORY) {
     loadPtc(path)
   } else {
     loadOwl()

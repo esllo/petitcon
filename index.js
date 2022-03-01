@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, dialog, protocol } = require('electron')
 const path = require('path')
+const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL } = require('./src/constants')
 const { startServer } = require('./src/server')
 
 let windows = {}
@@ -11,7 +12,6 @@ let sizeString
 let validDisplays
 let server = null
 // 'screen-saver'
-const ALWAYS_ON_TOP_LEVEL = 'pop-up-menu'
 
 
 const lock = app.requestSingleInstanceLock()
@@ -19,8 +19,8 @@ if (!lock) {
   app.quit()
   return
 } else {
-  app.on('second-instance', (e, argv) => {
-    const ptc = argv.find((arg) => arg.endsWith('.ptc'))
+  app.on(ELECTRON_SECOND_INSTANCE, (e, argv) => {
+    const ptc = argv.find((arg) => arg.endsWith(CUSTOM_FILE_EXTENSION))
     createWindow(ptc)
   })
 }
@@ -243,7 +243,7 @@ function createWindow(resource) {
   window.loadFile('./src/index.html', { hash: uuid + sizeString })
 }
 
-ipcMain.on('move', (e, data) => {
+ipcMain.on(IPC_MOVE, (e, data) => {
   const { uuid, x, y } = data
   if (windows[uuid]) {
     try {
@@ -286,16 +286,16 @@ function buildMenu({ uuid, name }) {
   return menu
 }
 
-ipcMain.on('showMenu', (e, data) => {
+ipcMain.on(IPC_SHOW_MENU, (e, data) => {
   const contextMenu = buildMenu(data)
   contextMenu.popup()
 })
 
-ipcMain.on('dialog', (e, data) => {
+ipcMain.on(IPC_DIALOG, (e, data) => {
   dialog.showMessageBox(data)
 })
 
-ipcMain.on('resize', (e, { uuid, size }) => {
+ipcMain.on(IPC_RESIZE, (e, { uuid, size }) => {
   if (windows[uuid]) {
     if (typeof size === 'number') {
       windows[uuid].setBounds({ width: size, height: size })
@@ -326,10 +326,10 @@ function bindRemoveWindow(uuid) {
 }
 
 function bindResizeWindow(uuid, size) {
-  return () => windows[uuid].webContents.send('resize', size)
+  return () => windows[uuid].webContents.send(IPC_RESIZE, size)
 }
 
-ipcMain.on('requestFocus', (e, uuid) => {
+ipcMain.on(IPC_REQUEST_FOCUS, (e, uuid) => {
   if (windows[uuid]) {
     windows[uuid].setAlwaysOnTop(false)
     windows[uuid].setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
@@ -337,7 +337,7 @@ ipcMain.on('requestFocus', (e, uuid) => {
 })
 
 app.whenReady().then(initWindow)
-app.on('window-all-closed', () => {
+app.on(ELECTRON_WINDOW_ALL_CLOSED, () => {
   if (!server) {
     app.quit()
   }

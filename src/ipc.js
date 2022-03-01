@@ -1,5 +1,6 @@
 const { uuid } = require('./hash-parser')
 const { ipcRenderer } = require("electron");
+const { IPC_STOP, IPC_THROW, IPC_THROW_FAR, IPC_MOVE_MONITOR, IPC_ALIGN, IPC_RESIZE, IPC_MOVE, NUMBER } = require('./constants');
 
 function ipcSend(name, ...args) {
   ipcRenderer.send(name, ...args)
@@ -16,7 +17,7 @@ function unbind(name, func) {
 function handleIpc(pet) {
   const { instance, clearBehavior, getRangeRand, setBehavior, setRandomPosition, resizePet } = pet
 
-  ipcRenderer.on('stop', () => {
+  ipcRenderer.on(IPC_STOP, () => {
     instance.stopped = true
     clearTimeout(instance.handler)
     instance.handler = null
@@ -33,27 +34,27 @@ function handleIpc(pet) {
     setBehavior('fall')()
   }
 
-  ipcRenderer.on('throw', () => {
+  ipcRenderer.on(IPC_THROW, () => {
     throwAll(5)
   })
 
-  ipcRenderer.on('throwFall', () => {
+  ipcRenderer.on(IPC_THROW_FAR, () => {
     throwAll(20)
   })
 
-  ipcRenderer.on('moveMonitor', (e, data) => {
+  ipcRenderer.on(IPC_MOVE_MONITOR, (e, data) => {
     instance.monitor = Number(data)
     setRandomPosition()
     setBehavior('fall')()
   })
 
-  ipcRenderer.on('stop', () => {
+  ipcRenderer.on(IPC_STOP, () => {
     instance.stopped = true
     clearTimeout(instance.handler)
     instance.handler = null
   })
 
-  ipcRenderer.on('align', (e, data) => {
+  ipcRenderer.on(IPC_ALIGN, (e, data) => {
     if (data === 'left') {
       instance.posX = instance.left
       instance.posY = instance.bottom
@@ -65,17 +66,17 @@ function handleIpc(pet) {
     setBehavior('stand')
   })
 
-  ipcRenderer.on('resize', (e, size) => {
-    if (typeof size === 'number'
-      || (typeof size.width === 'number' && typeof size.height === 'number')) {
+  ipcRenderer.on(IPC_RESIZE, (e, size) => {
+    if (typeof size === NUMBER
+      || (typeof size.width === NUMBER && typeof size.height === NUMBER)) {
       resizePet(size)
-      ipcRenderer.send('resize', { uuid, size })
+      ipcRenderer.send(IPC_RESIZE, { uuid, size })
       clearBehavior()
     }
   })
 
   instance.tickHandler = function () {
-    ipcSend('move', {
+    ipcSend(IPC_MOVE, {
       uuid,
       x: instance.posX - instance.X_OFFSET,
       y: instance.posY - instance.Y_OFFSET,

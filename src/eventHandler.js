@@ -1,7 +1,6 @@
 const { ipcSend } = require("./ipc")
 const { uuid, xes } = require('./hash-parser')
-
-const THROW_DENOM = 30
+const { IPC_REQUEST_FOCUS, IPC_SHOW_MENU, CUSTOM_FILE_EXTENSION, THROW_DENOM } = require("./constants")
 
 function handleEvent(pet, loadPtc) {
   const { instance, clearBehavior, setBehavior } = pet
@@ -11,7 +10,7 @@ function handleEvent(pet, loadPtc) {
       instance.clicked = true
       clearBehavior()
       instance.currentAction = 'fall'
-      ipcSend('requestFocus', uuid)
+      ipcSend(IPC_REQUEST_FOCUS, uuid)
     }
   }
 
@@ -41,7 +40,7 @@ function handleEvent(pet, loadPtc) {
   }
 
   window.oncontextmenu = () => {
-    ipcSend('showMenu', { uuid, name: instance.info.name })
+    ipcSend(IPC_SHOW_MENU, { uuid, name: instance.info.name })
   }
 
   window.onmousemove = ({ screenX, screenY }) => {
@@ -62,7 +61,7 @@ function handleEvent(pet, loadPtc) {
     e.preventDefault()
     if (e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
-      if (file.path.endsWith('.ptc')) {
+      if (file.path.endsWith(CUSTOM_FILE_EXTENSION)) {
         loadPtc(file.path)
       }
     }
