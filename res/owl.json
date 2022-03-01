@@ -1,6 +1,9 @@
 {
   "name": "owl",
   "author": "master@esllo.com",
+  "compatibleVersion": 1,
+  "pickYAnchor": 0.2,
+  "pickXAnchor": 0.5,
   "behaviors": [
     {
       "action": "fall",
