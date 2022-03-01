@@ -252,6 +252,12 @@ ipcMain.on('dialog', (e, data) => {
   dialog.showMessageBox(data)
 })
 
+ipcMain.on('resize', (e, { uuid, width, height }) => {
+  if (windows[uuid]) {
+    windows[uuid].setSize(width, height)
+  }
+})
+
 function mapWindows(func) {
   Object.values(windows).map(func)
 }
