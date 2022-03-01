@@ -3,6 +3,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
   const LEFT_WALL = -1, RIGHT_WALL = 1
 
   const instance = {
+    info: {},
     monitor: 0,
     clicked: false,
     falling: false,
@@ -172,7 +173,13 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (data) {
       parseTarget = data
     }
-    const { name, author, behaviors } = parseTarget
+    const { behaviors, ...info } = parseTarget
+    const infoFields = ['name', 'author', 'artist']
+    infoFields.forEach(field => {
+      if (info[field]) {
+        instance.info[field] = info[field]
+      }
+    })
     instance.actions = {}
     instance.behaviors = {}
     instance.conditions = []
