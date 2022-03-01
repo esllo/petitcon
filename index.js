@@ -48,23 +48,23 @@ function initWindow() {
     {
       type: 'separator'
     },
-    {
-      type: 'checkbox',
-      label: '스트리머용 서버 실행',
-      click: () => {
-        if (!server) {
-          server = startServer(app.getAppPath())
-          new Array(windowCount).fill(0).forEach(() => reduceWindow(true))
-        } else {
-          server.close()
-          server = null
-          if (windowCount < 1) {
-            createWindow()
-          }
-        }
-      },
-      checked: !!server
-    },
+    // {
+    //   type: 'checkbox',
+    //   label: '스트리머용 서버 실행',
+    //   click: () => {
+    //     if (!server) {
+    //       server = startServer(app.getAppPath())
+    //       new Array(windowCount).fill(0).forEach(() => reduceWindow(true))
+    //     } else {
+    //       server.close()
+    //       server = null
+    //       if (windowCount < 1) {
+    //         createWindow()
+    //       }
+    //     }
+    //   },
+    //   checked: !!server
+    // },
     {
       type: 'separator'
     },
