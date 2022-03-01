@@ -4,6 +4,8 @@ const fs = require('fs')
 const jszip = require('jszip')
 const owl = require('./pet')
 const owlJson = require('../res/owl.json')
+const ptcJson = require('../res/ptc.json')
+const path = require('path')
 
 
 const THROW_DENOM = 30
@@ -14,32 +16,40 @@ const img = document.getElementById('img')
 const { instance, clearBehavior, setBehavior, setRandomPosition, getRangeRand, launch, parseData } = owl(img, widths, heights, xes, totalWidth, owlJson)
 instance.tickHandler = sendMoveEvent
 
-window.onmousedown = () => {
-  instance.clicked = true
-  clearBehavior()
-  instance.currentAction = 'fall'
+window.onmousedown = ({ buttons }) => {
+  if (buttons === 1) {
+    instance.clicked = true
+    clearBehavior()
+    instance.currentAction = 'fall'
+  }
 }
 window.onmouseup = () => {
-  for (let i = xes.length - 1; i >= 0; i--) {
-    if (instance.posX > xes[i]) {
-      instance.monitor = i
-      break;
+  if (instance.clicked) {
+    for (let i = xes.length - 1; i >= 0; i--) {
+      if (instance.posX > xes[i]) {
+        instance.monitor = i
+        break;
+      }
+    }
+    instance.clicked = false
+    clearBehavior()
+    if (instance.queue.length > 5) {
+      instance.queue.pop()
+      instance.queue.pop()
+      instance.queue.pop()
+      instance.queue.pop()
+      const [prevX, prevY] = instance.queue.pop()
+
+      instance.fallAcceleration = (instance.posY - prevY) / THROW_DENOM
+      instance.velX = (instance.posX - prevX) / THROW_DENOM
+      instance.direction = instance.posX - prevX < 0 ? 1 : -1
+      setBehavior('fall')
     }
   }
-  instance.clicked = false
-  clearBehavior()
-  if (instance.queue.length > 5) {
-    instance.queue.pop()
-    instance.queue.pop()
-    instance.queue.pop()
-    instance.queue.pop()
-    const [prevX, prevY] = instance.queue.pop()
+}
 
-    instance.fallAcceleration = (instance.posY - prevY) / THROW_DENOM
-    instance.velX = (instance.posX - prevX) / THROW_DENOM
-    instance.direction = instance.posX - prevX < 0 ? 1 : -1
-    setBehavior('fall')
-  }
+window.oncontextmenu = () => {
+  ipcRenderer.send('showMenu', { uuid, name: instance.info.name })
 }
 
 window.onmousemove = ({ screenX, screenY }) => {
@@ -124,10 +134,14 @@ function loadOwl() {
   })
 }
 
-function loadPtc(path) {
-  fs.readFile(path, (err, data) => {
+function loadPtc(filepath) {
+  let filename = path.basename(filepath)
+  if (filename.endsWith('.ptc')) {
+    filename = filename.substring(0, filename.length - 4)
+  }
+  fs.readFile(filepath, (err, data) => {
     jszip.loadAsync(data).then(async (zip) => {
-      let json = owlJson
+      let json = ptcJson
       if (zip.files['behaviors.json']) {
         const jsonText = await zip.files['behaviors.json'].async('text')
         try {
@@ -136,6 +150,9 @@ function loadPtc(path) {
         } catch (e) {
           console.error(e)
         }
+      }
+      if (!json.name) {
+        json.name = filename
       }
       const requiredFiles = json.behaviors.reduce((prev, { action, duration }) => {
         let files = duration.map((_, i) => `${action}-${i}.png`)
