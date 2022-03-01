@@ -1,4 +1,3 @@
-const { ipcRenderer } = require('electron')
 const { uuid, widths, heights, xes, totalWidth } = require('./hash-parser')
 const fs = require('fs')
 const jszip = require('jszip')
@@ -6,135 +5,23 @@ const pet = require('./pet')
 const owlJson = require('../res/owl.json')
 const ptcJson = require('../res/ptc.json')
 const path = require('path')
+const { ipcSend, bind, handleIpc } = require('./ipc')
+const { handleEvent } = require('./eventHandler')
 
-
-const THROW_DENOM = 30
 const FILES = ['climb-0.png', 'climb-1.png', 'fall-0.png', 'fall-1.png', 'sit-0.png', 'stand-0.png', 'tilt-0.png', 'tilt-1.png', 'walk-0.png', 'walk-1.png', 'walk-2.png', 'walk-3.png']
 
 const img = document.getElementById('img')
 
-const { instance, clearBehavior, setBehavior, setRandomPosition, getRangeRand, launch, parseData, ...myPet } = pet(img, widths, heights, xes, totalWidth, owlJson)
-instance.tickHandler = sendMoveEvent
-
-window.onmousedown = ({ buttons }) => {
-  if (buttons === 1) {
-    instance.clicked = true
-    clearBehavior()
-    instance.currentAction = 'fall'
-    ipcRenderer.send('requestFocus', uuid)
-  }
-}
-window.onmouseup = () => {
-  if (instance.clicked) {
-    for (let i = xes.length - 1; i >= 0; i--) {
-      if (instance.posX > xes[i]) {
-        instance.monitor = i
-        break;
-      }
-    }
-    instance.clicked = false
-    clearBehavior()
-    if (instance.queue.length > 5) {
-      instance.queue.pop()
-      instance.queue.pop()
-      instance.queue.pop()
-      instance.queue.pop()
-      const [prevX, prevY] = instance.queue.pop()
-
-      instance.fallAcceleration = (instance.posY - prevY) / THROW_DENOM
-      instance.velX = (instance.posX - prevX) / THROW_DENOM
-      instance.direction = instance.posX - prevX < 0 ? 1 : -1
-      setBehavior('fall')
-    }
-  }
-}
-
-window.oncontextmenu = () => {
-  ipcRenderer.send('showMenu', { uuid, name: instance.info.name })
-}
-
-window.onmousemove = ({ screenX, screenY }) => {
-  if (instance.clicked) {
-    instance.posX = Math.max(instance.fullLeft, screenX)
-    instance.posY = Math.max(instance.top, screenY)
-    if (instance.posX > instance.fullRight) {
-      instance.posX = instance.fullRight
-    }
-    if (instance.posY > instance.bottom) {
-      instance.posY = instance.bottom
-    }
-  }
-}
-
-document.body.ondragover = (e) => e.preventDefault()
-document.body.ondrop = (e) => {
-  e.preventDefault()
-  if (e.dataTransfer.files[0]) {
-    const file = e.dataTransfer.files[0]
-    if (file.path.endsWith('.ptc')) {
-      loadPtc(file.path)
-    }
-  }
-}
-
-function sendMoveEvent() {
-  ipcRenderer.send('move', {
-    uuid,
-    x: instance.posX - instance.X_OFFSET,
-    y: instance.posY - instance.Y_OFFSET,
-  })
-}
-
-ipcRenderer.on('stop', () => {
-  instance.stopped = true
-  clearTimeout(instance.handler)
-  instance.handler = null
-})
-
-function throwAll(dist) {
-  clearBehavior()
-  let delX = getRangeRand(dist * -1, dist) * 2
-  let delY = getRangeRand(-10, -15)
-  instance.fallAcceleration = delY
-  delY += delY
-  instance.velX = delX
-  instance.direction = delX < 0 ? 1 : -1
-  setBehavior('fall')()
-}
-
-ipcRenderer.on('throw', () => {
-  throwAll(5)
-})
-
-ipcRenderer.on('throwFall', () => {
-  throwAll(20)
-})
-
-ipcRenderer.on('moveMonitor', (e, data) => {
-  instance.monitor = Number(data)
-  setRandomPosition()
-  setBehavior('fall')()
-})
-
-ipcRenderer.on('align', (e, data) => {
-  if (data === 'left') {
-    instance.posX = instance.left
-    instance.posY = instance.bottom
-  } else if (data === 'right') {
-    instance.posX = instance.right
-    instance.posY = instance.bottom
-  }
-  clearBehavior()
-  setBehavior('stand')
-})
+const myPet = pet(img, widths, heights, xes, totalWidth, owlJson)
+const { instance, launch, parseData } = myPet
 
 function checkResize({ size }) {
   if (size) {
     if (typeof size === 'number') {
-      ipcRenderer.send('resize', { uuid, width: size, height: size })
+      ipcSend('resize', { uuid, width: size, height: size })
     } else if (typeof size.width === 'number' && typeof size.height === 'number') {
       const { width, height } = size
-      ipcRenderer.send('resize', { uuid, width, height })
+      ipcSend('resize', { uuid, width, height })
     }
   }
 }
@@ -179,7 +66,7 @@ function loadPtc(filepath) {
       const listCheck = requiredFiles.find((file) => !zipFiles.includes(file))
       if (zipCheck || listCheck) {
         loadOwl()
-        ipcRenderer.send('dialog', {
+        ipcSend('dialog', {
           message: '유효하지 않은 doa 파일이에요'
         })
       } else {
@@ -195,7 +82,10 @@ function loadPtc(filepath) {
   })
 }
 
-ipcRenderer.on('launch', (e, path, appPath) => {
+handleIpc(myPet)
+handleEvent(myPet, loadPtc)
+
+bind('launch', (e, path, appPath) => {
   instance.appPath = appPath
   if (path && path !== '.') {
     loadPtc(path)
@@ -203,13 +93,4 @@ ipcRenderer.on('launch', (e, path, appPath) => {
     loadOwl()
   }
   launch()
-})
-
-ipcRenderer.on('resize', (e, size) => {
-  if (typeof size === 'number'
-    || (typeof size.width === 'number' && typeof size.height === 'number')) {
-    myPet.resizePet(size)
-    ipcRenderer.send('resize', { uuid, size })
-    clearBehavior()
-  }
 })
