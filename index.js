@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, dialog, protocol } = require('electron')
 const path = require('path')
+const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL } = require('./src/constants')
 const { startServer } = require('./src/server')
 
 let windows = {}
@@ -10,6 +11,7 @@ let maxCount = 10
 let sizeString
 let validDisplays
 let server = null
+// 'screen-saver'
 
 
 const lock = app.requestSingleInstanceLock()
@@ -17,8 +19,8 @@ if (!lock) {
   app.quit()
   return
 } else {
-  app.on('second-instance', (e, argv) => {
-    const ptc = argv.find((arg) => arg.endsWith('.ptc'))
+  app.on(ELECTRON_SECOND_INSTANCE, (e, argv) => {
+    const ptc = argv.find((arg) => arg.endsWith(CUSTOM_FILE_EXTENSION))
     createWindow(ptc)
   })
 }
@@ -159,7 +161,7 @@ function initWindow() {
       click: () => {
         mapWindows((window) => {
           window.setAlwaysOnTop(false)
-          window.setAlwaysOnTop(true)
+          window.setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
         })
       }
     },
@@ -181,18 +183,23 @@ function initWindow() {
 
 function reduceWindow(forced = false) {
   if (Object.keys(windows).length > 1 || forced) {
-    const key = Object.keys(windows)[0]
-    windows[key].webContents.send('stop')
-    windows[key].close()
-    windows[key] = null
-
-    delete windows[key]
-    windowCount -= 1
+    const uuid = Object.keys(windows)[0]
+    removeWindow(uuid)
   } else {
     dialog.showMessageBox({
       message: '최소 한 마리는 돌아다녀야 해요'
     })
   }
+}
+
+function removeWindow(uuid) {
+  windows[uuid].webContents.send('stop')
+  windows[uuid].close()
+  windows[uuid] = null
+  delete windows[uuid]
+
+  windowCount -= 1
+
 }
 
 function createWindow(resource) {
@@ -215,11 +222,10 @@ function createWindow(resource) {
     },
     show: false,
     transparent: true,
-    alwaysOnTop: true,
   })
   window.setFocusable(false)
   // window.setContentProtection(true)
-  window.setAlwaysOnTop(true)
+  window.setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
   window.webContents.on('did-finish-load', () => {
     window.show()
 
@@ -237,7 +243,7 @@ function createWindow(resource) {
   window.loadFile('./src/index.html', { hash: uuid + sizeString })
 }
 
-ipcMain.on('move', (e, data) => {
+ipcMain.on(IPC_MOVE, (e, data) => {
   const { uuid, x, y } = data
   if (windows[uuid]) {
     try {
@@ -248,8 +254,55 @@ ipcMain.on('move', (e, data) => {
   }
 })
 
-ipcMain.on('dialog', (e, data) => {
+const resizeValues = [50, 80, 100, 120]
+
+function buildMenu({ uuid, name }) {
+  const menu = Menu.buildFromTemplate([
+    {
+      label: `PetitCon - ${name}`,
+      type: 'normal',
+      enabled: false,
+    },
+    {
+      type: 'separator'
+    },
+    {
+      type: 'submenu',
+      label: '크기 변경',
+      submenu: resizeValues.map((size) => ({
+        type: 'normal',
+        label: `${size}%`,
+        click: bindResizeWindow(uuid, size),
+      }))
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '집 보내기',
+      click: bindRemoveWindow(uuid)
+    }
+  ])
+  return menu
+}
+
+ipcMain.on(IPC_SHOW_MENU, (e, data) => {
+  const contextMenu = buildMenu(data)
+  contextMenu.popup()
+})
+
+ipcMain.on(IPC_DIALOG, (e, data) => {
   dialog.showMessageBox(data)
+})
+
+ipcMain.on(IPC_RESIZE, (e, { uuid, size }) => {
+  if (windows[uuid]) {
+    if (typeof size === 'number') {
+      windows[uuid].setBounds({ width: size, height: size })
+    } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+      windows[uuid].setBounds(size)
+    }
+  }
 })
 
 function mapWindows(func) {
@@ -268,8 +321,23 @@ function bindWebPreference(key) {
   return ({ checked }) => mapWindows((window) => window[key](checked))
 }
 
+function bindRemoveWindow(uuid) {
+  return () => removeWindow(uuid)
+}
+
+function bindResizeWindow(uuid, size) {
+  return () => windows[uuid].webContents.send(IPC_RESIZE, size)
+}
+
+ipcMain.on(IPC_REQUEST_FOCUS, (e, uuid) => {
+  if (windows[uuid]) {
+    windows[uuid].setAlwaysOnTop(false)
+    windows[uuid].setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
+  }
+})
+
 app.whenReady().then(initWindow)
-app.on('window-all-closed', () => {
+app.on(ELECTRON_WINDOW_ALL_CLOSED, () => {
   if (!server) {
     app.quit()
   }

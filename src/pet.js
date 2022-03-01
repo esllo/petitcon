@@ -3,6 +3,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
   const LEFT_WALL = -1, RIGHT_WALL = 1
 
   const instance = {
+    info: {},
     monitor: 0,
     clicked: false,
     falling: false,
@@ -10,6 +11,20 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     requireSrcChange: false,
     posX: 0,
     posY: 0,
+    get renderX() {
+      if (this.clicked) {
+        const dist = this.X_OFFSET * 2 * (this.pickXAnchor || 0.5)
+        return this.posX + this.X_OFFSET - dist
+      }
+      return this.posX
+    },
+    get renderY() {
+      if (this.clicked) {
+        const dist = this.Y_OFFSET * 2 * (this.pickYAnchor || 0.5)
+        return this.posY + this.Y_OFFSET - dist
+      }
+      return this.posY
+    },
     velX: 0,
     velY: 0,
     tick: 0,
@@ -46,12 +61,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     get bottom() {
       return this.height - this.Y_OFFSET
     },
-    get X_OFFSET() {
-      return 50
-    },
-    get Y_OFFSET() {
-      return 50
-    },
+    X_OFFSET: 50,
+    Y_OFFSET: 50,
     get width() {
       return xes[this.monitor] + widths[this.monitor]
     },
@@ -107,7 +118,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     for (let i = 0; i < conditions.length; i++) {
       const { condition, chance, action } = conditions[i]
       let realCondition = callFunction(condition)
-      if (realCondition === undefined) {
+      if (condition === undefined && realCondition === undefined) {
         realCondition = true
       }
       const realChance = hasChance(chance || 100)
@@ -162,8 +173,21 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
         return hasNeerWall()
       case 'isNotGround':
         return isNotGround()
+      case 'isPicking':
+        return instance.clicked
       default:
         return undefined
+    }
+  }
+
+  function resizePet(size) {
+    if (size) {
+      if (typeof size === 'number') {
+        instance.X_OFFSET = instance.Y_OFFSET = size / 2;
+      } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+        instance.X_OFFSET = size.width / 2
+        instance.Y_OFFSET = size.height / 2
+      }
     }
   }
 
@@ -172,10 +196,30 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (data) {
       parseTarget = data
     }
-    const { name, author, behaviors } = parseTarget
+    const { behaviors, size, pickXAnchor, pickYAnchor, ...info } = parseTarget
+    const infoFields = ['name', 'author', 'artist']
+
+    infoFields.forEach(field => {
+      if (info[field]) {
+        instance.info[field] = info[field]
+      }
+    })
+
+    if (pickXAnchor) {
+      instance.pickXAnchor = pickXAnchor
+    }
+    if (pickYAnchor) {
+      instance.pickYAnchor = pickYAnchor
+    }
+
     instance.actions = {}
     instance.behaviors = {}
     instance.conditions = []
+
+    if (size) {
+      resizePet(size)
+    }
+
     behaviors.forEach(behavior => {
       const { action, condition, duration, durationRange, evaluate, chance } = behavior;
       instance.actions[action] = function () {
@@ -255,50 +299,52 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       instance.fallAcceleration += 0.98 / 10
     }
 
-    instance.posX = instance.posX + instance.velX
-    instance.posY = instance.posY + instance.velY + instance.fallAcceleration
-    if (instance.posX < instance.left) {
-      instance.posX = instance.left
-      if (instance.currentAction === 'walk') {
-        clearBehavior()
-      } else if (instance.currentAction === 'fall') {
-        if (hasChance(10)) {
+    if (!instance.clicked) {
+      instance.posX = instance.posX + instance.velX
+      instance.posY = instance.posY + instance.velY + instance.fallAcceleration
+      if (instance.posX < instance.left) {
+        instance.posX = instance.left
+        if (instance.currentAction === 'walk') {
           clearBehavior()
-          setBehavior('climb')
-        } else {
-          instance.direction = instance.direction * -1
-          instance.velX = instance.velX * -0.7
+        } else if (instance.currentAction === 'fall') {
+          if (hasChance(10)) {
+            clearBehavior()
+            setBehavior('climb')
+          } else {
+            instance.direction = instance.direction * -1
+            instance.velX = instance.velX * -0.7
+          }
         }
       }
-    }
-    if (instance.posY < instance.top) {
-      instance.posY = instance.top
-      if (instance.currentAction === 'walk') {
-        clearBehavior()
-      } else if (instance.currentAction === 'fall') {
-        instance.velX = instance.velX * 0.9
-        instance.fallAcceleration = instance.fallAcceleration * -0.3
-      }
-    }
-    if (instance.posX > instance.right) {
-      instance.posX = instance.right
-      if (instance.currentAction === 'walk') {
-        clearBehavior()
-      } else if (instance.currentAction === 'fall') {
-        if (hasChance(10)) {
+      if (instance.posY < instance.top) {
+        instance.posY = instance.top
+        if (instance.currentAction === 'walk') {
           clearBehavior()
-          setBehavior('climb')
-        } else {
-          instance.direction = instance.direction * -1
-          instance.velX = instance.velX * -0.7
+        } else if (instance.currentAction === 'fall') {
+          instance.velX = instance.velX * 0.9
+          instance.fallAcceleration = instance.fallAcceleration * -0.3
         }
       }
-    }
-    if (instance.posY > instance.bottom) {
-      instance.posY = instance.bottom;
-      if (instance.currentAction === 'walk' || instance.currentAction === 'fall') {
-        clearBehavior()
-        setBehavior('sit')
+      if (instance.posX > instance.right) {
+        instance.posX = instance.right
+        if (instance.currentAction === 'walk') {
+          clearBehavior()
+        } else if (instance.currentAction === 'fall') {
+          if (hasChance(10)) {
+            clearBehavior()
+            setBehavior('climb')
+          } else {
+            instance.direction = instance.direction * -1
+            instance.velX = instance.velX * -0.7
+          }
+        }
+      }
+      if (instance.posY > instance.bottom) {
+        instance.posY = instance.bottom;
+        if (instance.currentAction === 'walk' || instance.currentAction === 'fall') {
+          clearBehavior()
+          setBehavior('sit')
+        }
       }
     }
 
@@ -352,6 +398,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     getNextBehavior,
     getRangeRand,
     tick,
+    resizePet,
     parseData,
   }
 }
