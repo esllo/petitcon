@@ -76,6 +76,8 @@ function sendMoveEvent() {
 
 ipcRenderer.on('stop', () => {
   instance.stopped = true
+  clearTimeout(instance.handler)
+  instance.handler = null
 })
 
 function throwAll(dist) {

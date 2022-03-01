@@ -224,7 +224,9 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
 
   function tick() {
     if (instance.stopped) {
-      clearInterval(instance.handler)
+      if (instance.handler) {
+        clearTimeout(instance.handler)
+      }
       return
     }
     if (instance.behaviorTick > instance.behaviorDuration && !instance.clicked) {
@@ -314,11 +316,12 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (instance.tickHandler) {
       instance.tickHandler()
     }
+    instance.handler = setTimeout(tick, 20)
   }
 
   function launch() {
     setRandomPosition()
-    instance.handler = setInterval(tick, 16)
+    instance.handler = setTimeout(tick, 20)
   }
 
   return {
