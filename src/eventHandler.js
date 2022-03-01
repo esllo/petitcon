@@ -9,7 +9,11 @@ function handleEvent(pet, loadPtc) {
     if (buttons === 1) {
       instance.clicked = true
       clearBehavior()
-      instance.currentAction = 'fall'
+      if (instance.actions['pick']) {
+        instance.currentAction = 'pick'
+      } else {
+        instance.currentAction = 'fall'
+      }
       ipcSend(IPC_REQUEST_FOCUS, uuid)
     }
   }
