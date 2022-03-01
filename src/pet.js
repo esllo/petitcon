@@ -11,6 +11,20 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     requireSrcChange: false,
     posX: 0,
     posY: 0,
+    get renderX() {
+      if (this.clicked) {
+        const dist = this.X_OFFSET * 2 * (this.pickXAnchor || 0.5)
+        return this.posX + this.X_OFFSET - dist
+      }
+      return this.posX
+    },
+    get renderY() {
+      if (this.clicked) {
+        const dist = this.Y_OFFSET * 2 * (this.pickYAnchor || 0.5)
+        return this.posY + this.Y_OFFSET - dist
+      }
+      return this.posY
+    },
     velX: 0,
     velY: 0,
     tick: 0,
@@ -104,7 +118,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     for (let i = 0; i < conditions.length; i++) {
       const { condition, chance, action } = conditions[i]
       let realCondition = callFunction(condition)
-      if (realCondition === undefined) {
+      if (condition !== undefined && realCondition === undefined) {
         realCondition = true
       }
       const realChance = hasChance(chance || 100)
@@ -159,6 +173,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
         return hasNeerWall()
       case 'isNotGround':
         return isNotGround()
+      case 'isPicking':
+        return instance.clicked
       default:
         return undefined
     }
@@ -180,19 +196,30 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (data) {
       parseTarget = data
     }
-    const { behaviors, size, ...info } = parseTarget
+    const { behaviors, size, pickXAnchor, pickYAnchor, ...info } = parseTarget
     const infoFields = ['name', 'author', 'artist']
+
     infoFields.forEach(field => {
       if (info[field]) {
         instance.info[field] = info[field]
       }
     })
+
+    if (pickXAnchor) {
+      instance.pickXAnchor = pickXAnchor
+    }
+    if (pickYAnchor) {
+      instance.pickYAnchor = pickYAnchor
+    }
+
     instance.actions = {}
     instance.behaviors = {}
     instance.conditions = []
+
     if (size) {
       resizePet(size)
     }
+
     behaviors.forEach(behavior => {
       const { action, condition, duration, durationRange, evaluate, chance } = behavior;
       instance.actions[action] = function () {
