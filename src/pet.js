@@ -46,12 +46,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     get bottom() {
       return this.height - this.Y_OFFSET
     },
-    get X_OFFSET() {
-      return 50
-    },
-    get Y_OFFSET() {
-      return 50
-    },
+    X_OFFSET: 50,
+    Y_OFFSET: 50,
     get width() {
       return xes[this.monitor] + widths[this.monitor]
     },
@@ -167,15 +163,29 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     }
   }
 
+  function resizePet(size) {
+    if (size) {
+      if (typeof size === 'number') {
+        instance.X_OFFSET = instance.Y_OFFSET = size / 2;
+      } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+        instance.X_OFFSET = size.width / 2
+        instance.Y_OFFSET = size.height / 2
+      }
+    }
+  }
+
   function parseData(data) {
     let parseTarget = behaviorData
     if (data) {
       parseTarget = data
     }
-    const { name, author, behaviors } = parseTarget
+    const { behaviors, size } = parseTarget
     instance.actions = {}
     instance.behaviors = {}
     instance.conditions = []
+    if (size) {
+      resizePet(size)
+    }
     behaviors.forEach(behavior => {
       const { action, condition, duration, durationRange, evaluate, chance } = behavior;
       instance.actions[action] = function () {
@@ -352,6 +362,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     getNextBehavior,
     getRangeRand,
     tick,
+    resizePet,
     parseData,
   }
 }
