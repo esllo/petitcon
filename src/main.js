@@ -176,7 +176,6 @@ function loadPtc(filepath) {
       const zipFiles = Object.keys(zip.files).filter((file) => file.endsWith('.png'))
       const zipCheck = zipFiles.find((file) => !requiredFiles.includes(file))
       const listCheck = requiredFiles.find((file) => !zipFiles.includes(file))
-      console.log(zipFiles, requiredFiles)
       if (zipCheck || listCheck) {
         loadOwl()
         ipcRenderer.send('dialog', {
@@ -205,6 +204,11 @@ ipcRenderer.on('launch', (e, path, appPath) => {
   launch()
 })
 
-ipcRenderer.on('resize', (e, { width, height }) => {
-  myPet.resizePet({ width, height })
+ipcRenderer.on('resize', (e, size) => {
+  if (typeof size === 'number'
+    || (typeof size.width === 'number' && typeof size.height === 'number')) {
+    myPet.resizePet(size)
+    ipcRenderer.send('resize', { uuid, size })
+    clearBehavior()
+  }
 })
