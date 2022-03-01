@@ -2,7 +2,7 @@ const { ipcRenderer } = require('electron')
 const { uuid, widths, heights, xes, totalWidth } = require('./hash-parser')
 const fs = require('fs')
 const jszip = require('jszip')
-const owl = require('../src/owl')
+const owl = require('./pet')
 const owlJson = require('../res/owl.json')
 
 
@@ -60,8 +60,8 @@ document.body.ondrop = (e) => {
   e.preventDefault()
   if (e.dataTransfer.files[0]) {
     const file = e.dataTransfer.files[0]
-    if (file.path.endsWith('.doa')) {
-      loadDoa(file.path)
+    if (file.path.endsWith('.ptc')) {
+      loadPtc(file.path)
     }
   }
 }
@@ -124,7 +124,7 @@ function loadOwl() {
   })
 }
 
-function loadDoa(path) {
+function loadPtc(path) {
   fs.readFile(path, (err, data) => {
     jszip.loadAsync(data).then(async (zip) => {
       let json = owlJson
@@ -168,7 +168,7 @@ function loadDoa(path) {
 ipcRenderer.on('launch', (e, path, appPath) => {
   instance.appPath = appPath
   if (path && path !== '.') {
-    loadDoa(path)
+    loadPtc(path)
   } else {
     loadOwl()
   }

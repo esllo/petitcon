@@ -18,8 +18,8 @@ if (!lock) {
   return
 } else {
   app.on('second-instance', (e, argv) => {
-    const doa = argv.find((arg) => arg.endsWith('.doa'))
-    createWindow(doa)
+    const ptc = argv.find((arg) => arg.endsWith('.ptc'))
+    createWindow(ptc)
   })
 }
 
@@ -41,7 +41,7 @@ function initWindow() {
   tray = new Tray(path.join(app.getAppPath(), '/res/icon.png'))
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Desktop Owl - ESLLO',
+      label: 'PetitCon - ESLLO',
       type: 'normal',
       enabled: false,
     },

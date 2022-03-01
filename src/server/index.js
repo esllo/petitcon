@@ -7,8 +7,8 @@ function startServer(appPath) {
     res.sendFile(path.join(appPath, 'src', 'server', 'index.html'))
   })
 
-  app.get('/owl.js', (req, res) => {
-    res.sendFile(path.join(appPath, 'src', 'owl.js'))
+  app.get('/pet.js', (req, res) => {
+    res.sendFile(path.join(appPath, 'src', 'pet.js'))
   })
 
   app.get('/stream.js', (req, res) => {

@@ -1,5 +1,5 @@
 {
-  "name": "desktop-owl",
+  "name": "petitcon",
   "version": "1.0.6",
   "main": "index.js",
   "author": "esllo",
@@ -15,8 +15,8 @@
     "electron-builder": "^22.14.13"
   },
   "build": {
-    "productName": "desktop-owl",
-    "appId": "esllo.desktop-owl",
+    "productName": "petitcon",
+    "appId": "esllo.petitcon",
     "asar": false,
     "win": {
       "target": [
@@ -31,11 +31,11 @@
       "icon": "./res/icon.ico"
     },
     "dmg": {
-      "title": "desktop-owl",
+      "title": "petitcon",
       "icon": "./res/icon.ico"
     },
     "portable": {
-      "artifactName": "desktop-owl.exe"
+      "artifactName": "petitcon.exe"
     },
     "nsis": {
       "oneClick": true,
@@ -49,10 +49,10 @@
     "fileAssociations": [
       {
         "ext": [
-          "doa"
+          "ptc"
         ],
-        "icon": "./res/doa.ico",
-        "name": "Desktop Owl Archive",
+        "icon": "./res/ptc.ico",
+        "name": "Petitcon File",
         "role": "Viewer"
       }
     ],
