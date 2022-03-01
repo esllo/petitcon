@@ -49,14 +49,8 @@ function handleEvent(pet, loadPtc) {
 
   window.onmousemove = ({ screenX, screenY }) => {
     if (instance.clicked) {
-      instance.posX = Math.max(instance.fullLeft, screenX)
-      instance.posY = Math.max(instance.top, screenY)
-      if (instance.posX > instance.fullRight) {
-        instance.posX = instance.fullRight
-      }
-      if (instance.posY > instance.bottom) {
-        instance.posY = instance.bottom
-      }
+      instance.posX = screenX
+      instance.posY = screenY
     }
   }
 
