@@ -21,6 +21,7 @@ window.onmousedown = ({ buttons }) => {
     instance.clicked = true
     clearBehavior()
     instance.currentAction = 'fall'
+    ipcRenderer.send('requestFocus', uuid)
   }
 }
 window.onmouseup = () => {
