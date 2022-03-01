@@ -51,6 +51,7 @@
         "ext": [
           "doa"
         ],
+        "icon": "./res/doa.ico",
         "name": "Desktop Owl Archive",
         "role": "Viewer"
       }
