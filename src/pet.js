@@ -118,7 +118,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     for (let i = 0; i < conditions.length; i++) {
       const { condition, chance, action } = conditions[i]
       let realCondition = callFunction(condition)
-      if (condition !== undefined && realCondition === undefined) {
+      if (condition === undefined && realCondition === undefined) {
         realCondition = true
       }
       const realChance = hasChance(chance || 100)
