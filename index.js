@@ -4,7 +4,6 @@ const { startServer } = require('./src/server')
 
 let windows = {}
 let tray = null
-let ignoreClick = false
 let id = 0
 let windowCount = 0;
 let maxCount = 10
@@ -145,8 +144,12 @@ function initWindow() {
     {
       label: '클릭 무시하기',
       type: 'checkbox',
-      checked: ignoreClick,
       click: changeIgnoreClick
+    },
+    {
+      label: '컨텐츠 보호 걸기',
+      type: 'checkbox',
+      click: changeContentProtectionClick
     },
     {
       label: '맨 앞으로 보내기',
@@ -205,7 +208,6 @@ function createWindow(resource) {
     maximizable: false,
     minimizable: false,
     webPreferences: {
-      backgroundThrottling: false,
       nodeIntegration: true,
       contextIsolation: false,
     },
@@ -274,9 +276,16 @@ function changeIgnoreClick(e) {
   const { checked } = e
   if (checked) {
     mapWindows((window) => window.setIgnoreMouseEvents(true))
-    ignoreClick = true
   } else {
     mapWindows((window) => window.setIgnoreMouseEvents(false))
+  }
+}
+function changeContentProtectionClick(e) {
+  const { checked } = e
+  if (checked) {
+    mapWindows((window) => window.setContentProtection(true))
+  } else {
+    mapWindows((window) => window.setContentProtection(false))
   }
 }
 
