@@ -299,50 +299,52 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       instance.fallAcceleration += 0.98 / 10
     }
 
-    instance.posX = instance.posX + instance.velX
-    instance.posY = instance.posY + instance.velY + instance.fallAcceleration
-    if (instance.posX < instance.left) {
-      instance.posX = instance.left
-      if (instance.currentAction === 'walk') {
-        clearBehavior()
-      } else if (instance.currentAction === 'fall') {
-        if (hasChance(10)) {
+    if (!instance.clicked) {
+      instance.posX = instance.posX + instance.velX
+      instance.posY = instance.posY + instance.velY + instance.fallAcceleration
+      if (instance.posX < instance.left) {
+        instance.posX = instance.left
+        if (instance.currentAction === 'walk') {
           clearBehavior()
-          setBehavior('climb')
-        } else {
-          instance.direction = instance.direction * -1
-          instance.velX = instance.velX * -0.7
+        } else if (instance.currentAction === 'fall') {
+          if (hasChance(10)) {
+            clearBehavior()
+            setBehavior('climb')
+          } else {
+            instance.direction = instance.direction * -1
+            instance.velX = instance.velX * -0.7
+          }
         }
       }
-    }
-    if (instance.posY < instance.top) {
-      instance.posY = instance.top
-      if (instance.currentAction === 'walk') {
-        clearBehavior()
-      } else if (instance.currentAction === 'fall') {
-        instance.velX = instance.velX * 0.9
-        instance.fallAcceleration = instance.fallAcceleration * -0.3
-      }
-    }
-    if (instance.posX > instance.right) {
-      instance.posX = instance.right
-      if (instance.currentAction === 'walk') {
-        clearBehavior()
-      } else if (instance.currentAction === 'fall') {
-        if (hasChance(10)) {
+      if (instance.posY < instance.top) {
+        instance.posY = instance.top
+        if (instance.currentAction === 'walk') {
           clearBehavior()
-          setBehavior('climb')
-        } else {
-          instance.direction = instance.direction * -1
-          instance.velX = instance.velX * -0.7
+        } else if (instance.currentAction === 'fall') {
+          instance.velX = instance.velX * 0.9
+          instance.fallAcceleration = instance.fallAcceleration * -0.3
         }
       }
-    }
-    if (instance.posY > instance.bottom) {
-      instance.posY = instance.bottom;
-      if (instance.currentAction === 'walk' || instance.currentAction === 'fall') {
-        clearBehavior()
-        setBehavior('sit')
+      if (instance.posX > instance.right) {
+        instance.posX = instance.right
+        if (instance.currentAction === 'walk') {
+          clearBehavior()
+        } else if (instance.currentAction === 'fall') {
+          if (hasChance(10)) {
+            clearBehavior()
+            setBehavior('climb')
+          } else {
+            instance.direction = instance.direction * -1
+            instance.velX = instance.velX * -0.7
+          }
+        }
+      }
+      if (instance.posY > instance.bottom) {
+        instance.posY = instance.bottom;
+        if (instance.currentAction === 'walk' || instance.currentAction === 'fall') {
+          clearBehavior()
+          setBehavior('sit')
+        }
       }
     }
 
