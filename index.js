@@ -253,12 +253,26 @@ ipcMain.on('move', (e, data) => {
   }
 })
 
+const resizeValues = [50, 80, 100, 120]
+
 function buildMenu({ uuid, name }) {
   const menu = Menu.buildFromTemplate([
     {
       label: `PetitCon - ${name}`,
       type: 'normal',
       enabled: false,
+    },
+    {
+      type: 'separator'
+    },
+    {
+      type: 'submenu',
+      label: '크기 변경',
+      submenu: resizeValues.map((size) => ({
+        type: 'normal',
+        label: `${size}%`,
+        click: bindResizeWindow(uuid, size),
+      }))
     },
     {
       type: 'separator'
@@ -280,9 +294,13 @@ ipcMain.on('dialog', (e, data) => {
   dialog.showMessageBox(data)
 })
 
-ipcMain.on('resize', (e, { uuid, width, height }) => {
+ipcMain.on('resize', (e, { uuid, size }) => {
   if (windows[uuid]) {
-    windows[uuid].setSize(width, height)
+    if (typeof size === 'number') {
+      windows[uuid].setBounds({ width: size, height: size })
+    } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+      windows[uuid].setBounds(size)
+    }
   }
 })
 
@@ -304,6 +322,10 @@ function bindWebPreference(key) {
 
 function bindRemoveWindow(uuid) {
   return () => removeWindow(uuid)
+}
+
+function bindResizeWindow(uuid, size) {
+  return () => windows[uuid].webContents.send('resize', size)
 }
 
 app.whenReady().then(initWindow)
