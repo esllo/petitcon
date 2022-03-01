@@ -2,7 +2,7 @@ const { ipcRenderer } = require('electron')
 const { uuid, widths, heights, xes, totalWidth } = require('./hash-parser')
 const fs = require('fs')
 const jszip = require('jszip')
-const owl = require('./pet')
+const pet = require('./pet')
 const owlJson = require('../res/owl.json')
 
 
@@ -11,7 +11,7 @@ const FILES = ['climb-0.png', 'climb-1.png', 'fall-0.png', 'fall-1.png', 'sit-0.
 
 const img = document.getElementById('img')
 
-const { instance, clearBehavior, setBehavior, setRandomPosition, getRangeRand, launch, parseData } = owl(img, widths, heights, xes, totalWidth, owlJson)
+const { instance, clearBehavior, setBehavior, setRandomPosition, getRangeRand, launch, parseData, ...myPet } = pet(img, widths, heights, xes, totalWidth, owlJson)
 instance.tickHandler = sendMoveEvent
 
 window.onmousedown = () => {
@@ -117,11 +117,23 @@ ipcRenderer.on('align', (e, data) => {
   setBehavior('stand')
 })
 
+function checkResize({ size }) {
+  if (size) {
+    if (typeof size === 'number') {
+      ipcRenderer.send('resize', { uuid, width: size, height: size })
+    } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+      const { width, height } = size
+      ipcRenderer.send('resize', { uuid, width, height })
+    }
+  }
+}
+
 function loadOwl() {
   FILES.forEach((file) => {
     const buffer = fs.readFileSync(`${instance.appPath}/res/${file}`)
     instance.images[file] = `data:image/png;base64, ${buffer.toString('base64')}`
   })
+  checkResize(owlJson)
 }
 
 function loadPtc(path) {
@@ -159,6 +171,7 @@ function loadPtc(path) {
           const base64 = await zip.files[file].async('base64')
           instance.images[file] = `data:image/png;base64, ${base64}`
         })
+        checkResize(json)
         parseData(json)
       }
     })
@@ -173,4 +186,8 @@ ipcRenderer.on('launch', (e, path, appPath) => {
     loadOwl()
   }
   launch()
+})
+
+ipcRenderer.on('resize', (e, { width, height }) => {
+  myPet.resizePet({ width, height })
 })
