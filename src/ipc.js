@@ -78,8 +78,8 @@ function handleIpc(pet) {
   instance.tickHandler = function () {
     ipcSend(IPC_MOVE, {
       uuid,
-      x: instance.posX - instance.X_OFFSET,
-      y: instance.posY - instance.Y_OFFSET,
+      x: instance.renderX - instance.X_OFFSET,
+      y: instance.renderY - instance.Y_OFFSET,
     })
   }
 
