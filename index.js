@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, dialog, protocol } = require('electron')
 const path = require('path')
-const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL } = require('./src/constants')
+const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL, IPC_THROW, IPC_THROW_FAR, IPC_MOVE_MONITOR, IPC_STOP, IPC_LAUNCH, NUMBER } = require('./src/constants')
 const { startServer } = require('./src/server')
 
 let windows = {}
@@ -116,20 +116,20 @@ function initWindow() {
       submenu: [
         {
           label: '날리기',
-          click: bindSendAll('throw')
+          click: bindSendAll(IPC_THROW)
         },
         {
           label: '멀리 날리기',
-          click: bindSendAll('throwFall')
+          click: bindSendAll(IPC_THROW_FAR)
         },
         ...(validDisplays.length > 1 ? [
           {
             label: '주 모니터로 옮기기',
-            click: bindSendAll('moveMonitor', 0)
+            click: bindSendAll(IPC_MOVE_MONITOR, 0)
           },
           {
             label: '보조 모니터로 옮기기',
-            click: bindSendAll('moveMonitor', 1)
+            click: bindSendAll(IPC_MOVE_MONITOR, 1)
           }
         ] : []),
         {
@@ -198,7 +198,7 @@ function reduceWindow(forced = false) {
 }
 
 function removeWindow(uuid) {
-  windows[uuid].webContents.send('stop')
+  windows[uuid].webContents.send(IPC_STOP)
   windows[uuid].close()
   windows[uuid] = null
   delete windows[uuid]
@@ -238,7 +238,7 @@ function createWindow(resource) {
     sizes[uuid] = [100, 100]
 
     const targetResource = resource || process.argv.splice(1, 1)[0]
-    window.webContents.send('launch', targetResource, app.getAppPath())
+    window.webContents.send(IPC_LAUNCH, targetResource, app.getAppPath())
   })
   if (process.env.NODE_ENV === 'development') {
     window.webContents.openDevTools({
@@ -308,10 +308,10 @@ ipcMain.on(IPC_DIALOG, (e, data) => {
 
 ipcMain.on(IPC_RESIZE, (e, { uuid, size }) => {
   if (windows[uuid]) {
-    if (typeof size === 'number') {
+    if (typeof size === NUMBER) {
       sizes[uuid] = [size, size]
       windows[uuid].setBounds({ width: size, height: size })
-    } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+    } else if (typeof size.width === NUMBER && typeof size.height === NUMBER) {
       sizes[uuid] = [size.width, size.height]
       windows[uuid].setBounds(size)
     }
