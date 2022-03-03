@@ -20,6 +20,8 @@ if (!lock) {
   app.quit()
   return
 } else {
+  app.commandLine.appendSwitch('high-dpi-support', 1)
+  app.commandLine.appendSwitch('force-device-scale-factor', 1)
   app.on(ELECTRON_SECOND_INSTANCE, (e, argv) => {
     const ptc = argv.find((arg) => arg.endsWith(CUSTOM_FILE_EXTENSION))
     createWindow(ptc)
