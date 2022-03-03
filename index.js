@@ -4,6 +4,7 @@ const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELEC
 const { startServer } = require('./src/server')
 
 let windows = {}
+let sizes = {}
 let tray = null
 let id = 0
 let windowCount = 0;
@@ -32,9 +33,11 @@ function initWindow() {
   validDisplays.splice(2, validDisplays.length - 2)
 
 
-  sizeString = validDisplays.reduce((prev, curr) => {
-    const { width, height, x } = curr.workArea
-    return prev + `&${width}-${height}-${x}`
+  sizeString = validDisplays.reduce((prev, { scaleFactor, workArea }) => {
+    const { width, height, x } = workArea
+    const sWidth = parseInt(width * scaleFactor)
+    const sHeight = parseInt(height * scaleFactor)
+    return prev + `&${sWidth}-${sHeight}-${x}-${scaleFactor}`
   }, '')
 
 
@@ -230,6 +233,7 @@ function createWindow(resource) {
     window.show()
 
     windows[uuid] = window
+    sizes[uuid] = [100, 100]
 
     const targetResource = resource || process.argv.splice(1, 1)[0]
     window.webContents.send('launch', targetResource, app.getAppPath())
@@ -247,7 +251,12 @@ ipcMain.on(IPC_MOVE, (e, data) => {
   const { uuid, x, y } = data
   if (windows[uuid]) {
     try {
-      windows[uuid].setPosition(parseInt(x), parseInt(y))
+      const [width, height] = sizes[uuid]
+      windows[uuid].setBounds({
+        x: parseInt(x), y: parseInt(y),
+        width,
+        height,
+      })
     } catch (e) {
       console.log(e)
     }
