@@ -309,8 +309,10 @@ ipcMain.on(IPC_DIALOG, (e, data) => {
 ipcMain.on(IPC_RESIZE, (e, { uuid, size }) => {
   if (windows[uuid]) {
     if (typeof size === 'number') {
+      sizes[uuid] = [size, size]
       windows[uuid].setBounds({ width: size, height: size })
     } else if (typeof size.width === 'number' && typeof size.height === 'number') {
+      sizes[uuid] = [size.width, size.height]
       windows[uuid].setBounds(size)
     }
   }
