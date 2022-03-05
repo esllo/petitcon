@@ -14,7 +14,11 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     get renderX() {
       if (this.clicked) {
         const dist = this.X_OFFSET * 2 * (this.pickXAnchor || 0.5)
-        return this.posX + this.X_OFFSET - dist
+        if (this.direction === 1) {
+          return this.posX + this.X_OFFSET - dist
+        } else {
+          return this.posX - this.X_OFFSET + dist
+        }
       }
       return this.posX
     },
