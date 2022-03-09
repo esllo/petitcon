@@ -91,7 +91,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     get currentTime() {
       return new Date().getTime()
     },
-    lastTimeStamp: this.currentTime
+    lastTimeStamp: this.currentTime,
+    size: { width: 0, height: 0, }
   }
 
   function addTickHandler(tickHandler) {
@@ -210,10 +211,16 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (size) {
       if (typeof size === 'number') {
         instance.X_OFFSET = instance.Y_OFFSET = size / 2;
+        instance.size = {
+          width: size,
+          height: size,
+        }
       } else if (typeof size.width === 'number' && typeof size.height === 'number') {
         instance.X_OFFSET = size.width / 2
         instance.Y_OFFSET = size.height / 2
+        instance.size = size
       }
+      instance.requireSrcChange = true
     }
   }
 
@@ -427,6 +434,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     tick,
     resizePet,
     parseData,
+    addTickHandler,
+    removeTickHandler,
   }
 }
 if (typeof module !== 'undefined') {
