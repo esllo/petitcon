@@ -9,6 +9,8 @@ const { ipcSend, bind, handleIpc } = require('./ipc')
 const { handleEvent } = require('./eventHandler')
 const { BASE64_META, OWL_FILES, NUMBER, CUSTOM_FILE_EXTENSION, BEHAVIOR_JSON, FILE_NOT_VALID, IPC_DIALOG, IPC_LAUNCH, CURRENT_DIRECTORY, IPC_RESIZE } = require('./constants')
 const img = document.getElementById('img')
+const canvas = document.getElementById('canvas')
+const context = canvas.getContext('2d')
 
 const myPet = pet(img, widths, heights, xes, totalWidth, owlJson)
 const { instance, launch, parseData } = myPet
