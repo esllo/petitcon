@@ -2,7 +2,7 @@ const { ipcSend } = require("./ipc")
 const { uuid, xes } = require('./hash-parser')
 const { IPC_REQUEST_FOCUS, IPC_SHOW_MENU, CUSTOM_FILE_EXTENSION, THROW_DENOM } = require("./constants")
 
-function handleEvent(pet, loadPtc) {
+function handleEvent(pet, loadPtc, mouseMoveEventHandler) {
   const { instance, clearBehavior, setBehavior } = pet
 
   window.onmousedown = ({ buttons }) => {
@@ -47,10 +47,12 @@ function handleEvent(pet, loadPtc) {
     ipcSend(IPC_SHOW_MENU, { uuid, name: instance.info.name })
   }
 
-  window.onmousemove = ({ screenX, screenY }) => {
+  window.onmousemove = ({ screenX, screenY, offsetX, offsetY }) => {
     if (instance.clicked) {
       instance.posX = screenX
       instance.posY = screenY
+    } else {
+      mouseMoveEventHandler(offsetX, offsetY)
     }
   }
 
