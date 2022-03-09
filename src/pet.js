@@ -36,7 +36,14 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     behaviorDuration: -1,
     fallAcceleration: 0,
     currentSrc: '',
-    nextSrc: '',
+    _nextSrc: '',
+    get nextSrc() {
+      return this._nextSrc
+    },
+    set nextSrc(src) {
+      this._nextSrc = src
+      this.requireSrcChange = true
+    },
     currentAction: '',
     queue: [],
     _direction: getRangeRand(0, 1) === 0 ? 1 : -1,
@@ -80,11 +87,24 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     actions: {},
     behaviors: {},
     conditions: [],
-    tickHandler: () => { },
+    tickHandlers: [],
     get currentTime() {
       return new Date().getTime()
     },
     lastTimeStamp: this.currentTime
+  }
+
+  function addTickHandler(tickHandler) {
+    if (!instance.tickHandlers.includes(tickHandler)) {
+      instance.tickHandlers.push(tickHandler)
+    }
+  }
+
+  function removeTickHandler(tickHandler) {
+    const index = instance.tickHandlers.indexOf(tickHandler)
+    if (index !== -1) {
+      instance.tickHandlers.splice(index, 1)
+    }
   }
 
   function setRandomPosition() {
@@ -359,7 +379,11 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       instance.queue.splice(0, 20)
     }
 
-    if (instance.currentSrc !== instance.nextSrc || instance.requireSrcChange) {
+    if (instance.tickHandlers.length > 0) {
+      instance.tickHandlers.forEach((tickHandler) => tickHandler(instance.requireSrcChange))
+    }
+
+    if (instance.requireSrcChange) {
       instance.requireSrcChange = false
       instance.currentSrc = instance.nextSrc
       img.className = `owl ${instance.currentAction} ${instance.direction === 1 ? 'right' : 'left'}${instance.clicked ? ' clicked' : ''} `
@@ -368,9 +392,6 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       }
     }
 
-    if (instance.tickHandler) {
-      instance.tickHandler()
-    }
     postTick()
   }
 
