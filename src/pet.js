@@ -41,8 +41,10 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       return this._nextSrc
     },
     set nextSrc(src) {
-      this._nextSrc = src
-      this.requireSrcChange = true
+      if (this._nextSrc !== src) {
+        this._nextSrc = src
+        this.requireSrcChange = true
+      }
     },
     currentAction: '',
     queue: [],
@@ -80,7 +82,7 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     get height() {
       return heights[this.monitor]
     },
-    get src() {
+    get image() {
       return this.images[`${this.currentSrc}.png`]
     },
     images: {},
@@ -251,6 +253,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
 
     if (size) {
       resizePet(size)
+    } else {
+      resizePet(100)
     }
 
     behaviors.forEach(behavior => {
@@ -386,17 +390,19 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       instance.queue.splice(0, 20)
     }
 
-    if (instance.tickHandlers.length > 0) {
-      instance.tickHandlers.forEach((tickHandler) => tickHandler(instance.requireSrcChange))
-    }
+    const requireRender = instance.requireSrcChange
 
     if (instance.requireSrcChange) {
-      instance.requireSrcChange = false
       instance.currentSrc = instance.nextSrc
       img.className = `owl ${instance.currentAction} ${instance.direction === 1 ? 'right' : 'left'}${instance.clicked ? ' clicked' : ''} `
-      if (instance.src) {
-        img.src = instance.src
+      if (instance.image) {
+        img.src = instance.image
       }
+      instance.requireSrcChange = false
+    }
+
+    if (instance.tickHandlers.length > 0) {
+      instance.tickHandlers.forEach((tickHandler) => tickHandler(requireRender))
     }
 
     postTick()
