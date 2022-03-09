@@ -7,7 +7,7 @@ const ptcJson = require('../res/ptc.json')
 const path = require('path')
 const { ipcSend, bind, handleIpc } = require('./ipc')
 const { handleEvent } = require('./eventHandler')
-const { BASE64_META, OWL_FILES, NUMBER, CUSTOM_FILE_EXTENSION, BEHAVIOR_JSON, FILE_NOT_VALID, IPC_DIALOG, IPC_LAUNCH, CURRENT_DIRECTORY, IPC_RESIZE } = require('./constants')
+const { BASE64_META, OWL_FILES, NUMBER, CUSTOM_FILE_EXTENSION, BEHAVIOR_JSON, FILE_NOT_VALID, IPC_DIALOG, IPC_LAUNCH, CURRENT_DIRECTORY, IPC_RESIZE, IPC_MOUSE_IGNORE } = require('./constants')
 const img = document.getElementById('img')
 const canvas = document.getElementById('canvas')
 const context = canvas.getContext('2d')
@@ -22,7 +22,6 @@ function render(requireRender) {
     canvas.height = height
     context.clearRect(0, 0, width, height)
     context.drawImage(instance.image, 0, 0, width, height)
-    console.log('render')
   }
 }
 
@@ -99,8 +98,16 @@ function loadPtc(filepath) {
   })
 }
 
+function handleMouseMove(x, y) {
+  const alpha = context.getImageData(x, y, 1, 1).data[3]
+  ipcSend(IPC_MOUSE_IGNORE, {
+    uuid,
+    ignore: alpha === 0,
+  })
+}
+
 handleIpc(myPet)
-handleEvent(myPet, loadPtc)
+handleEvent(myPet, loadPtc, handleMouseMove)
 
 bind(IPC_LAUNCH, (e, path, appPath) => {
   instance.appPath = appPath
