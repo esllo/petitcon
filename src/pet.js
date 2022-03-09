@@ -151,7 +151,9 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
   }
 
   function setBehavior(action) {
-    instance.behaviors[action]()
+    if (instance.behaviors[action]) {
+      instance.behaviors[action]()
+    }
   }
 
 
