@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, dialog, protocol } = require('electron')
 const path = require('path')
-const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL, IPC_THROW, IPC_THROW_FAR, IPC_MOVE_MONITOR, IPC_STOP, IPC_LAUNCH, NUMBER } = require('./src/constants')
+const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL, IPC_THROW, IPC_THROW_FAR, IPC_MOVE_MONITOR, IPC_STOP, IPC_LAUNCH, NUMBER, IPC_MOUSE_IGNORE } = require('./src/constants')
 const { startServer } = require('./src/server')
 
 let windows = {}
@@ -346,6 +346,16 @@ function init() {
     if (windows[uuid]) {
       windows[uuid].setAlwaysOnTop(false)
       windows[uuid].setAlwaysOnTop(true, ALWAYS_ON_TOP_LEVEL)
+    }
+  })
+
+  ipcMain.on(IPC_MOUSE_IGNORE, (e, { uuid, ignore }) => {
+    if (windows[uuid]) {
+      if (ignore) {
+        windows[uuid].setIgnoreMouseEvents(true, { forward: true })
+      } else {
+        windows[uuid].setIgnoreMouseEvents(false)
+      }
     }
   })
 
