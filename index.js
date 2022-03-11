@@ -82,7 +82,7 @@ function init() {
       createWindow()
     }
 
-    tray = new Tray(path.join(app.getAppPath(), '/res/icon.png'))
+    tray = new Tray(path.join(app.getAppPath(), '/res/tray.png'))
     const contextMenu = Menu.buildFromTemplate([
       {
         label: 'PetitCon - ESLLO',
