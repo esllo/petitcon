@@ -15,8 +15,17 @@ const context = canvas.getContext('2d')
 const myPet = pet(canvas, widths, heights, xes, totalWidth, owlJson)
 const { instance, launch, parseData, addTickHandler } = myPet
 
+function initDraw(){
+  const { width, height } = instance.size
+  context.clearRect(0, 0, width, height)
+  context.rect(width / 2 - 10, height / 2 - 10, 20, 20)
+}
+initDraw()
+
+
 function render(requireRender) {
   if (requireRender && instance.image) {
+    console.log('render')
     const { width, height } = instance.size
     canvas.width = width
     canvas.height = height

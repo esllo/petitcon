@@ -3,6 +3,9 @@ const path = require('path')
 const { IPC_REQUEST_FOCUS, IPC_RESIZE, IPC_DIALOG, IPC_SHOW_MENU, IPC_MOVE, ELECTRON_WINDOW_ALL_CLOSED, ELECTRON_SECOND_INSTANCE, CUSTOM_FILE_EXTENSION, ALWAYS_ON_TOP_LEVEL, IPC_THROW, IPC_THROW_FAR, IPC_MOVE_MONITOR, IPC_STOP, IPC_LAUNCH, NUMBER, IPC_MOUSE_IGNORE } = require('./src/constants')
 const { startServer } = require('./src/server')
 
+let appReady = false
+let readyQueue = []
+
 let windows = {}
 let sizes = {}
 let tray = null
@@ -14,6 +17,8 @@ let validDisplays
 let server = null
 // 'screen-saver'
 
+let openHandler = null
+
 function init() {
   const lock = app.requestSingleInstanceLock()
   if (!lock) {
@@ -22,13 +27,40 @@ function init() {
   } else {
     app.commandLine.appendSwitch('high-dpi-support', 1)
     app.commandLine.appendSwitch('force-device-scale-factor', 1)
+    
+    app.on('will-finish-launching', () => {
+      app.on('open-file', (event, path) => {
+        event.preventDefault()
+        app.commandLine.appendSwitch('high-dpi-support', 1)
+        app.commandLine.appendSwitch('force-device-scale-factor', 1)
+        if(appReady){
+          createWindow(path)
+          if(openHandler){
+            clearTimeout(openHandler)
+            openHandler = null
+          }
+        }else{
+          readyQueue.push(path)
+        }
+      });
+    });
     app.on(ELECTRON_SECOND_INSTANCE, (e, argv) => {
+      if(appReady){
+        openHandler = setTimeout(createWindow, 500)
+      }
       const ptc = argv.find((arg) => arg.endsWith(CUSTOM_FILE_EXTENSION))
-      createWindow(ptc)
+      if(ptc){
+        createWindow(ptc)
+        if(openHandler){
+          clearTimeout(openHandler)
+          openHandler = null
+        }
+      }
     })
   }
 
   function initWindow() {
+    appReady = true
     protocol.registerFileProtocol('*', (req, cb) => { });
     const allDisplays = screen.getAllDisplays()
     validDisplays = allDisplays.sort(({ workArea: a }, { workArea: b }) => a.x < b.x ? -1 : 1)
@@ -36,14 +68,19 @@ function init() {
 
 
     sizeString = validDisplays.reduce((prev, { scaleFactor, workArea }) => {
-      const { width, height, x } = workArea
+      const { width, height, x, y } = workArea
       const sWidth = parseInt(width * scaleFactor)
-      const sHeight = parseInt(height * scaleFactor)
+      const sHeight = parseInt(height+y * scaleFactor)
       return prev + `&${sWidth}-${sHeight}-${x}-${scaleFactor}`
     }, '')
 
 
-    createWindow()
+    if(readyQueue.length > 0){
+      readyQueue.forEach(path => createWindow(path))
+      readyQueue = undefined
+    }else{
+      createWindow()
+    }
 
     tray = new Tray(path.join(app.getAppPath(), '/res/icon.png'))
     const contextMenu = Menu.buildFromTemplate([
@@ -184,6 +221,7 @@ function init() {
     ])
     tray.setToolTip('Desktop Owl - esllo')
     tray.setContextMenu(contextMenu)
+
   }
 
   function reduceWindow(forced = false) {

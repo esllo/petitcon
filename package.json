@@ -11,7 +11,7 @@
     "build:osx": "electron-builder --mac"
   },
   "devDependencies": {
-    "electron": "^17.0.1",
+    "electron": "^17.1.2",
     "electron-builder": "^22.14.13"
   },
   "build": {
@@ -22,17 +22,37 @@
       "target": [
         "nsis"
       ],
-      "icon": "./res/icon.ico"
+      "icon": "./res/icon.ico",
+      "fileAssociations": [
+        {
+          "ext": [
+            "ptc"
+          ],
+          "icon": "./res/ptc.ico",
+          "name": "Petitcon File",
+          "role": "Viewer"
+        }
+      ]
     },
     "mac": {
       "target": [
         "default"
       ],
-      "icon": "./res/icon.ico"
+      "icon": "./res/icon.png",
+      "fileAssociations": [
+        {
+          "ext": [
+            "ptc"
+          ],
+          "icon": "./res/icon.png",
+          "name": "Petitcon File",
+          "role": "Viewer"
+        }
+      ]
     },
     "dmg": {
       "title": "petitcon",
-      "icon": "./res/icon.ico"
+      "icon": "./res/icon.png"
     },
     "portable": {
       "artifactName": "petitcon.exe"
@@ -46,16 +66,6 @@
       ],
       "language": "1042"
     },
-    "fileAssociations": [
-      {
-        "ext": [
-          "ptc"
-        ],
-        "icon": "./res/ptc.ico",
-        "name": "Petitcon File",
-        "role": "Viewer"
-      }
-    ],
     "publish": null
   },
   "dependencies": {
