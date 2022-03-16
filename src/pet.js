@@ -179,6 +179,9 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     }
   }
 
+  function hasBehavior(action) {
+    return instance.behaviors[action] !== undefined
+  }
 
   function clearBehavior() {
     instance.tick = 0
@@ -342,9 +345,10 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
         if (instance.currentAction === 'walk') {
           clearBehavior()
         } else if (instance.currentAction === 'fall') {
-          if (hasChance(10)) {
+          if (hasBehavior('climb') && hasChance(10)) {
             clearBehavior()
             setBehavior('climb')
+            console.log('climb')
           } else {
             instance.direction = instance.direction * -1
             instance.velX = instance.velX * -0.7
