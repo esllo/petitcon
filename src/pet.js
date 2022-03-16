@@ -304,8 +304,6 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     })
   }
 
-  parseData()
-
   function tick() {
     if (instance.stopped) {
       if (instance.handler) {

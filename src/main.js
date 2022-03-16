@@ -46,6 +46,7 @@ function loadOwl() {
     instance.images[file] = image
   })
   checkResize(owlJson)
+  parseData()
 }
 
 function loadPtc(filepath) {
@@ -83,6 +84,7 @@ function loadPtc(filepath) {
         ipcSend(IPC_DIALOG, {
           message: FILE_NOT_VALID
         })
+        console.log('loadOwl')
       } else {
         // load 
         requiredFiles.forEach(async (file) => {
