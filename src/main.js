@@ -7,11 +7,25 @@ const ptcJson = require('../res/ptc.json')
 const path = require('path')
 const { ipcSend, bind, handleIpc } = require('./ipc')
 const { handleEvent } = require('./eventHandler')
-const { BASE64_META, OWL_FILES, NUMBER, CUSTOM_FILE_EXTENSION, BEHAVIOR_JSON, FILE_NOT_VALID, IPC_DIALOG, IPC_LAUNCH, CURRENT_DIRECTORY, IPC_RESIZE } = require('./constants')
+const { BASE64_META, OWL_FILES, NUMBER, CUSTOM_FILE_EXTENSION, BEHAVIOR_JSON, FILE_NOT_VALID, IPC_DIALOG, IPC_LAUNCH, CURRENT_DIRECTORY, IPC_RESIZE, IPC_MOUSE_IGNORE } = require('./constants')
 const img = document.getElementById('img')
+const canvas = document.getElementById('canvas')
+const context = canvas.getContext('2d')
 
-const myPet = pet(img, widths, heights, xes, totalWidth, owlJson)
-const { instance, launch, parseData } = myPet
+const myPet = pet(canvas, widths, heights, xes, totalWidth, owlJson)
+const { instance, launch, parseData, addTickHandler } = myPet
+
+function render(requireRender) {
+  if (requireRender && instance.image) {
+    const { width, height } = instance.size
+    canvas.width = width
+    canvas.height = height
+    context.clearRect(0, 0, width, height)
+    context.drawImage(instance.image, 0, 0, width, height)
+  }
+}
+
+addTickHandler(render)
 
 function checkResize({ size }) {
   if (size) {
@@ -27,9 +41,12 @@ function checkResize({ size }) {
 function loadOwl() {
   OWL_FILES.forEach((file) => {
     const buffer = fs.readFileSync(`${instance.appPath}/res/${file}`)
-    instance.images[file] = `${BASE64_META}${buffer.toString('base64')}`
+    const image = new Image()
+    image.src = `${BASE64_META}${buffer.toString('base64')}`
+    instance.images[file] = image
   })
   checkResize(owlJson)
+  parseData()
 }
 
 function loadPtc(filepath) {
@@ -67,11 +84,14 @@ function loadPtc(filepath) {
         ipcSend(IPC_DIALOG, {
           message: FILE_NOT_VALID
         })
+        console.log('loadOwl')
       } else {
         // load 
         requiredFiles.forEach(async (file) => {
           const base64 = await zip.files[file].async('base64')
-          instance.images[file] = `${BASE64_META}${base64}`
+          const image = new Image()
+          image.src = `${BASE64_META}${base64}`
+          instance.images[file] = image
         })
         checkResize(json)
         parseData(json)
@@ -80,8 +100,16 @@ function loadPtc(filepath) {
   })
 }
 
+function handleMouseMove(x, y) {
+  const alpha = context.getImageData(x, y, 1, 1).data[3]
+  ipcSend(IPC_MOUSE_IGNORE, {
+    uuid,
+    ignore: alpha === 0,
+  })
+}
+
 handleIpc(myPet)
-handleEvent(myPet, loadPtc)
+handleEvent(myPet, loadPtc, handleMouseMove)
 
 bind(IPC_LAUNCH, (e, path, appPath) => {
   instance.appPath = appPath

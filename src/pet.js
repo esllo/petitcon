@@ -36,7 +36,16 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     behaviorDuration: -1,
     fallAcceleration: 0,
     currentSrc: '',
-    nextSrc: '',
+    _nextSrc: '',
+    get nextSrc() {
+      return this._nextSrc
+    },
+    set nextSrc(src) {
+      if (this._nextSrc !== src) {
+        this._nextSrc = src
+        this.requireSrcChange = true
+      }
+    },
     currentAction: '',
     queue: [],
     _direction: getRangeRand(0, 1) === 0 ? 1 : -1,
@@ -73,18 +82,32 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     get height() {
       return heights[this.monitor]
     },
-    get src() {
+    get image() {
       return this.images[`${this.currentSrc}.png`]
     },
     images: {},
     actions: {},
     behaviors: {},
     conditions: [],
-    tickHandler: () => { },
+    tickHandlers: [],
     get currentTime() {
       return new Date().getTime()
     },
-    lastTimeStamp: this.currentTime
+    lastTimeStamp: this.currentTime,
+    size: { width: 0, height: 0, }
+  }
+
+  function addTickHandler(tickHandler) {
+    if (!instance.tickHandlers.includes(tickHandler)) {
+      instance.tickHandlers.push(tickHandler)
+    }
+  }
+
+  function removeTickHandler(tickHandler) {
+    const index = instance.tickHandlers.indexOf(tickHandler)
+    if (index !== -1) {
+      instance.tickHandlers.splice(index, 1)
+    }
   }
 
   function setRandomPosition() {
@@ -151,9 +174,14 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
   }
 
   function setBehavior(action) {
-    instance.behaviors[action]()
+    if (instance.behaviors[action]) {
+      instance.behaviors[action]()
+    }
   }
 
+  function hasBehavior(action) {
+    return instance.behaviors[action] !== undefined
+  }
 
   function clearBehavior() {
     instance.tick = 0
@@ -188,10 +216,16 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     if (size) {
       if (typeof size === 'number') {
         instance.X_OFFSET = instance.Y_OFFSET = size / 2;
+        instance.size = {
+          width: size,
+          height: size,
+        }
       } else if (typeof size.width === 'number' && typeof size.height === 'number') {
         instance.X_OFFSET = size.width / 2
         instance.Y_OFFSET = size.height / 2
+        instance.size = size
       }
+      instance.requireSrcChange = true
     }
   }
 
@@ -222,6 +256,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
 
     if (size) {
       resizePet(size)
+    } else {
+      resizePet(100)
     }
 
     behaviors.forEach(behavior => {
@@ -271,8 +307,6 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     })
   }
 
-  parseData()
-
   function tick() {
     if (instance.stopped) {
       if (instance.handler) {
@@ -311,9 +345,10 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
         if (instance.currentAction === 'walk') {
           clearBehavior()
         } else if (instance.currentAction === 'fall') {
-          if (hasChance(10)) {
+          if (hasBehavior('climb') && hasChance(10)) {
             clearBehavior()
             setBehavior('climb')
+            console.log('climb')
           } else {
             instance.direction = instance.direction * -1
             instance.velX = instance.velX * -0.7
@@ -357,18 +392,21 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
       instance.queue.splice(0, 20)
     }
 
-    if (instance.currentSrc !== instance.nextSrc || instance.requireSrcChange) {
-      instance.requireSrcChange = false
+    const requireRender = instance.requireSrcChange
+
+    if (instance.requireSrcChange) {
       instance.currentSrc = instance.nextSrc
       img.className = `owl ${instance.currentAction} ${instance.direction === 1 ? 'right' : 'left'}${instance.clicked ? ' clicked' : ''} `
-      if (instance.src) {
-        img.src = instance.src
+      if (instance.image) {
+        img.src = instance.image
       }
+      instance.requireSrcChange = false
     }
 
-    if (instance.tickHandler) {
-      instance.tickHandler()
+    if (instance.tickHandlers.length > 0) {
+      instance.tickHandlers.forEach((tickHandler) => tickHandler(requireRender))
     }
+
     postTick()
   }
 
@@ -404,6 +442,8 @@ function owl(img, widths, heights, xes, totalWidth, behaviorData) {
     tick,
     resizePet,
     parseData,
+    addTickHandler,
+    removeTickHandler,
   }
 }
 if (typeof module !== 'undefined') {

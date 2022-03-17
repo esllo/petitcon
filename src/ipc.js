@@ -15,7 +15,7 @@ function unbind(name, func) {
 }
 
 function handleIpc(pet) {
-  const { instance, clearBehavior, getRangeRand, setBehavior, setRandomPosition, resizePet } = pet
+  const { instance, clearBehavior, getRangeRand, setBehavior, setRandomPosition, resizePet, addTickHandler } = pet
 
   ipcRenderer.on(IPC_STOP, () => {
     instance.stopped = true
@@ -75,13 +75,13 @@ function handleIpc(pet) {
     }
   })
 
-  instance.tickHandler = function () {
+  addTickHandler(function () {
     ipcSend(IPC_MOVE, {
       uuid,
       x: instance.renderX - instance.X_OFFSET,
       y: instance.renderY - instance.Y_OFFSET,
     })
-  }
+  })
 
 }
 

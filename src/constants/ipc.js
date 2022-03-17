@@ -9,6 +9,7 @@ const IPC_ALIGN = 'align'
 const IPC_MOVE = 'move'
 const IPC_REQUEST_FOCUS = 'requestFocus'
 const IPC_SHOW_MENU = 'showMenu'
+const IPC_MOUSE_IGNORE = 'mouseIgnore'
 
 module.exports = {
   IPC_RESIZE,
@@ -22,4 +23,5 @@ module.exports = {
   IPC_MOVE,
   IPC_REQUEST_FOCUS,
   IPC_SHOW_MENU,
+  IPC_MOUSE_IGNORE,
 }
