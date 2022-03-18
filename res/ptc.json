@@ -1,7 +1,7 @@
 {
   "author": "master@esllo.com",
   "compatibleVersion": 1,
-  "pickYAnchor": 0.2,
+  "pickYAnchor": 0.5,
   "pickXAnchor": 0.5,
   "behaviors": [
     {
